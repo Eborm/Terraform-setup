@@ -1,0 +1,192 @@
+# ============================================================
+# Terraform
+# ============================================================
+
+# Terraform working directory
+.terraform/
+
+# Terraform state files
+*.tfstate
+*.tfstate.*
+terraform.tfstate
+terraform.tfstate.*
+
+# Terraform state backups
+*.tfstate.backup
+
+# Terraform plan files
+*.tfplan
+*.plan
+plan.out
+
+# Crash logs
+crash.log
+crash.*.log
+
+# Terraform CLI configuration
+.terraformrc
+terraform.rc
+
+# Terraform lock file
+# KEEP this file committed in most projects so provider versions
+# are reproducible.
+# .terraform.lock.hcl
+
+
+# ============================================================
+# Secrets / Environment-specific configuration
+# ============================================================
+
+# Environment variable files
+.env
+.env.*
+*.env
+
+# Terraform variable files
+*.tfvars
+*.tfvars.json
+
+# Exception: keep example/template variable files
+!*.tfvars.example
+!*.tfvars.template
+
+# If you have a non-secret example file:
+# terraform.tfvars.example
+
+
+# ============================================================
+# Terraform generated files
+# ============================================================
+
+# Terraform output files
+*.tfout
+
+# Generated Terraform configuration
+*.tf.json
+
+
+# ============================================================
+# Provider / Tool caches
+# ============================================================
+
+# Terraform plugin cache
+.terraform.d/plugin-cache/
+
+# Terraform CLI data
+.terraform.d/
+
+
+# ============================================================
+# Secrets / Keys / Certificates
+# ============================================================
+
+# Private keys
+*.pem
+*.key
+*.p12
+*.pfx
+*.pkcs12
+
+# SSH private keys
+id_rsa
+id_rsa.*
+id_dsa
+id_dsa.*
+id_ecdsa
+id_ecdsa.*
+id_ed25519
+id_ed25519.*
+
+# Certificates
+*.crt
+*.cer
+*.cert
+
+# Generic secret files
+secrets/
+secret/
+credentials/
+credential/
+
+# Common cloud credential files
+.aws/
+.gcloud/
+.azure/
+
+# Service account credentials
+service-account*.json
+*-service-account.json
+credentials*.json
+
+
+# ============================================================
+# OS files
+# ============================================================
+
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+ehthumbs.db
+
+
+# ============================================================
+# Editor / IDE files
+# ============================================================
+
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+
+# ============================================================
+# Logs
+# ============================================================
+
+*.log
+logs/
+
+
+# ============================================================
+# Temporary files
+# ============================================================
+
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+*.orig
+*.rej
+
+
+# ============================================================
+# Local Terraform development overrides
+# ============================================================
+
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+
+# ============================================================
+# Terragrunt (if used)
+# ============================================================
+
+.terragrunt-cache/
+.terragrunt-source-manifest
+
+
+# ============================================================
+# Terraform test files / generated test artifacts
+# ============================================================
+
+.terraform-test/
