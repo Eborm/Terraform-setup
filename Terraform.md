@@ -22,10 +22,23 @@ pveum aclmod / -user terraform-prov@pve -role TerraformProv
 Steps to create the Terraform proxmox provider.
 
 ### Setup enviorment variables in Terraform for proxmox
-Saves the username and password to enviorment variables make sure to add this file to .gitignore
+Create a file names variables.tf and add in this so terraform can read your password and username that will be added in secrets.auto.tfvars
 ``` c#
-export PM_USER="terraform-prov@pve"
-export PM_PASS="TerraformUserPassword"
+variable "proxmox_username" {
+  type      = string
+  sensitive = true
+}
+
+variable "proxmox_password" {
+  type      = string
+  sensitive = true
+}
+```
+
+And create secrets.auto.tfvars and add your username and password to it
+``` c#
+proxmox_username = "terraform-prov@pve"
+proxmox_password = "Your-Proxmox-Password"
 ```
 
 ### Create main.tf
@@ -34,7 +47,7 @@ This setups the Terraform provider for proxmox allowing Terraform to create dest
 terraform {
   required_providers {
     proxmox = {
-      source  = "Terraform-for-Proxmox/proxmox"
+      source = "bpg/proxmox"
     }
   }
 }
@@ -44,15 +57,15 @@ terraform {
 ``` c#
 teraform init
 ```
-DD
+
 ### From the init add version flag to main.tf
 The init will give you back the current version number for Terraform-for-proxmox. It is smart to add this to your main.tf file so the version doesn't change and destroy your setup.
 ``` c#
 terraform {
   required_providers {
     proxmox = {
-      source  = "Terraform-for-Proxmox/proxmox"
-      version = "version-number"
+      source = "bpg/proxmox"
+      version = "version_number"
     }
   }
 }
@@ -62,7 +75,12 @@ terraform {
 This is what finally lets Terraform talk to the provider we created. After this you can setup your VM's and such
 ``` c#
 provider "proxmox" {
-  pm_api_url = "https://proxmox.server.url/api2/json"
+  endpoint = "https://proxmox.server.url/api2/json"
+
+  password = var.proxmox_password
+  username = var.proxmox_username
+
+  insecure = true
 }
 ```
 
@@ -80,4 +98,93 @@ variable proxmox-nodes {
 }
 ```
 
-### 
+### Create kubernetes module
+From the terminal run
+``` c#
+mkdir kubernetes
+```
+
+In main.tf add so it can access the file in the kubernetes folder where we will add all of our virtual machines
+``` c#
+module "kubernetes" {
+  source = "./kubernetes"
+}
+```
+
+### Setting up the VM's
+In the folder kubernetes create a main.tf file. Within this file we will define our VM's for the Talos kubernetes cluster
+
+### Defining how many control nodes and worker nodes
+Within the file create 2 local variables like this and add the required providers you do not need to add the provider itself again
+``` c#
+terraform {
+  required_providers {
+    proxmox = {
+      source = "bpg/proxmox"
+      version = "version_number"
+    }
+  }
+}
+
+local {
+    talos_control_node = {
+        "cp-01" = {
+            target_node = "node-1" //replace with the target node 
+        }
+    }
+
+    talos_worker_node = {
+        "wn-01" = {
+            target_node = "node-1" //replace with the target node
+            memory = 8192 //8 Gb of ram. Change this to the appropriate amount for your worker.
+        },
+        "wn-02" = {
+            target_node = "node-1" //replace with the target node
+            memory = 8192 //8 Gb of ram. Change this to the appropriate amount for your worker.
+        }
+    }
+}
+```
+Within these variables you define your VM's as a example i have added 1 control node and 2 worker nodes you can scale this up as you need.
+
+### Defining the control node
+Here you define what resources your control node has
+``` c#
+
+resource "proxmox_virtual_environment_vm" "Control_node" {
+    for_each = local.talos_control_node //Creates a VM for each control node defined in the code block above
+    
+    name = each.key //Grabs the name from the control node definition
+    node_name = each.value.target_node //Grabs the target node from the control node definition
+
+    agent {
+        enabled = true //enables the Qemu guest agent
+    }
+
+    cpu {
+        cores = 2 //2 cores can be adjusted but is recomended for Talos control node
+        type = "host" //Using type host
+    }
+
+    memory {
+        dedicated = 4096 // 4 Gigabytes of ram can be adjusted but is recomended for Talos 
+        floating = 0 //This is for ballooning set it to dedicated to enable it
+    }
+
+    cdrom {
+        file_id = "Storage-Iso-Is-Saved-On:iso/Set-To-Right-Iso-File-Name"
+        interface = "ide2"
+    }
+
+    disk {
+        datastore_id = "local-lvm" //Set this to the right datastorage
+        interface = "scsi0"
+        size = 40 //40 Gib disk 
+    }
+
+    network_device {
+        bridge = "vmbr0"
+        model = "e1000" //I am using e1000 because other wise i get problems. Use what ever you need
+    }
+}
+``` 
