@@ -9,9 +9,9 @@ terraform {
 
 locals {
     talos_control_node = {
-        "cp-01" = {
-            target_node = "clanker-02" //change to clanker-01 for prod
-        }//, These nodes will be added in the future this is for now to try it out
+        //"cp-01" = {
+        //    target_node = "clanker-02" //change to clanker-01 for prod
+        //}//, These nodes will be added in the future this is for now to try it out
         //"cp-02" = {
         //    target_node = "clanker-01"
         //}
@@ -22,7 +22,7 @@ locals {
 
     talos_worker_node = {
         //for the test run only create one worker node instead of all 3
-        "temp_wn" = {
+        "wn-01" = {
             target_node = "clanker-02"
             memory = 6144
         }
@@ -47,12 +47,14 @@ resource "proxmox_virtual_environment_vm" "Control_node" {
     name = each.key //Grabs the name from the control node definition
     node_name = each.value.target_node //Grabs the target node from the control node definition
 
+    boot_order = ["scsi0", "ide2"]
+
     agent {
         enabled = true //enables the Qemu guest agent
     }
 
     cpu {
-        cores = 2 //2 cores can be adjusted but is recomended for Talos
+        cores = 2 //2 cores can be adjusted but is recomended for Talos control node
         type = "host"
     }
 
@@ -70,6 +72,45 @@ resource "proxmox_virtual_environment_vm" "Control_node" {
         datastore_id = "local-lvm"
         interface = "scsi0"
         size = 40
+    }
+
+    network_device {
+        bridge = "vmbr0"
+        model = "e1000"
+    }
+}
+
+resource "proxmox_virtual_environment_vm" "Worker_node" {
+    for_each = local.talos_worker_node //Creates a VM for each Worker node defined in the code block above
+    
+    name = each.key //Grabs the name from the Worker node node definition
+    node_name = each.value.target_node //Grabs the target node from the Worker node definition
+
+    boot_order = ["scsi0", "ide2"]
+
+    agent {
+        enabled = true //enables the Qemu guest agent
+    }
+
+    cpu {
+        cores = 4 //4 cores can be adjusted but is recomended for Talos worker node
+        type = "host"
+    }
+
+    memory {
+        dedicated = each.value.memory //Defined in the worker node
+        floating = 0 //This is for ballooning set it to dedicated to enable it
+    }
+
+    cdrom {
+        file_id = "local:iso/Talos_USE_THIS_-nocloud-amd64.iso"
+        interface = "ide2"
+    }
+
+    disk {
+        datastore_id = "local-lvm"
+        interface = "scsi0"
+        size = 50
     }
 
     network_device {
