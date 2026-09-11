@@ -137,10 +137,12 @@ local {
         "wn-01" = {
             target_node = "node-1" //replace with the target node
             memory = 8192 //8 Gb of ram. Change this to the appropriate amount for your worker.
+            cores = 4 //Recommended for tallos worker node
         },
         "wn-02" = {
             target_node = "node-1" //replace with the target node
             memory = 8192 //8 Gb of ram. Change this to the appropriate amount for your worker.
+            cores = 4 //Recommended for tallos worker node
         }
     }
 }
@@ -206,7 +208,7 @@ resource "proxmox_virtual_environment_vm" "Worker_node" {
     }
 
     cpu {
-        cores = 4 //4 cores can be adjusted but is recomended for Talos worker node
+        cores = each.value.cores
         type = "host"
     }
 
