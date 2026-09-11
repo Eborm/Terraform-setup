@@ -66,3 +66,18 @@ provider "proxmox" {
 }
 ```
 
+# Setting up the VM's and nodes
+
+### Set up the nodes for Terraform to use
+Replace all the nodes with the correct names and amount of nodes.
+``` c#
+variable proxmox-nodes {
+  type        = set(string)
+  default     = [
+    "node-1",
+    "node-2",
+  ]
+}
+```
+
+### 

@@ -8,6 +8,13 @@ terraform {
 }
 
 provider "proxmox" {
-  pm_api_url = "https://192.168.68.180:8006/api2/json"
+  pm_api_url = "https://192.168.68.180:8006/api2/json" //local url
 }
 
+variable proxmox-nodes {
+  type        = set(string)
+  default     = [
+    "clanker-01",
+    "clanker-02",
+  ]
+}
