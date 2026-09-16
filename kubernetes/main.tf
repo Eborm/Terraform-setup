@@ -11,25 +11,31 @@ locals {
     talos_control_node = {
         "cp-01" = {
             target_node = "clanker-01" 
+            mac_address = "BC:24:11:13:8F:60"
+            ip_adress = "192.168.68.191"
         },
         "cp-02" = {
-            target_node = "clanker-01"
+            target_node = "clanker-02"
+            mac_address = "BC:24:11:17:F4:4D"
+            ip_adress = "192.168.68.192"
         },
         "cp-03" = {
-            target_node = "clanker-02"
+            target_node = "clanker-03"
+            mac_address = "BC:24:11:E7:8F:17"
+            ip_adress = "192.168.68.193"
         }
     }
 
     talos_worker_node = {
         "wn-01" = {
-            target_node = "clanker-01"`
-            cores = 3
-            memory = 12288
+            target_node = "clanker-01"
+            cores = 4
+            memory = 14336
         },
         "wn-02" = {
-            cores = 3
+            cores = 4
             target_node = "clanker-01"
-            memory = 12288
+            memory = 14336
         },
         "wn-03" = {
             cores = 2
@@ -80,6 +86,7 @@ resource "proxmox_virtual_environment_vm" "Control_node" {
     network_device {
         bridge = "vmbr0"
         model = "e1000"
+        mac_address = each.value.mac_address
     }
 }
 
