@@ -6,12 +6,12 @@ This file assumes you have also updated the proxmox configuration using the `Pro
 Within the folder proxmox create a `outputs.tf` file. This is the file we will use to extract the ip's from the vm's we created.
 Within this file create these 2 ouputs.
 ``` c#
-#This exports the control nodes in full including mac adress, taget-node and most importantly ip.
+//This exports the control nodes in full including mac adress, taget-node and most importantly ip.
 output "control_nodes" {
   value = local.talos_control_node
 }
 
-#This exports the worker nodes ip's using the proxmox qemu agent.
+//This exports the worker nodes ip's using the proxmox qemu agent.
 output "worker_nodes" {
   value = {
     for name, vm in proxmox_virtual_environment_vm.Worker_node : name => {
@@ -73,16 +73,16 @@ Now we can add the module to the `main.tf` file finishing our work here.
 
 ``` c#
 module "talos-config" {
-  #Define the source
+  //Define the source
   source = "./talos-config" 
 
-  #Add the control nodes to the module allowing talos to then use these
+  //Add the control nodes to the module allowing talos to then use these
   control_nodes = module.kubernetes.control_nodes 
 
-  #Add the worker nodes to the module allowing talos to then use these
+  //Add the worker nodes to the module allowing talos to then use these
   worker_nodes = module.kubernetes.worker_nodes 
 
-  #Add the dependency on 
+  //Add the dependency on 
   depends_on = [
     module.proxmox
   ]
@@ -94,7 +94,7 @@ Within the `/talos-config` folder create a `variables.tf` file. Here we will ref
 
 This is done by adding this to the `variables.tf` file
 ``` c#
-#Control node variable allowing terraform to apply the config to the control nodes
+//Control node variable allowing terraform to apply the config to the control nodes
 variable "control_nodes" {
   type = map(object({
     target_node = string
@@ -103,7 +103,7 @@ variable "control_nodes" {
   }))
 }
 
-#Worker node variable allowing terraform to apply the config to the worker nodes. These are gotten by using the proxmox qemu guest agent so make sure the talos image you are using has this added as a extention.
+//Worker node variable allowing terraform to apply the config to the worker nodes. These are gotten by using the proxmox qemu guest agent so make sure the talos image you are using has this added as a extention.
 variable "worker_nodes" {
   type = map(object({
     ip_addresses = list(list(string))
@@ -132,10 +132,10 @@ The configuration for talos requires a few variables deined as
 
 ``` c#
 locals {
-  cluster_name     = "Homelab" #Set this to whatever you want your Talos cluster to be called
+  cluster_name     = "Homelab" //Set this to whatever you want your Talos cluster to be called
   cluster_endpoint = "https://Ip of one of your control node:6443"
 
-  #Get the ip addresses for your worker nodes so these can be properly added into the cluster
+  //Get the ip addresses for your worker nodes so these can be properly added into the cluster
   worker_ips = {
     for name, worker in var.worker_nodes :
     name => one([
@@ -151,7 +151,7 @@ locals {
 Next up we need to generate the talos secrets this is done very simply by adding this to the `main.tf` file
 
 ``` c#
-resource "talos_machine_secrets" "this" {} #Generates the talos machine secrets
+resource "talos_machine_secrets" "this" {} //Generates the talos machine secrets
 ```
 
 #### Configuring the controlplane nodes
@@ -159,10 +159,10 @@ Next we define the configuration for the control nodes
 
 ``` c#
 data "talos_machine_configuration" "controlplane" {
-  cluster_name     = local.cluster_name #Cluster name
-  cluster_endpoint = local.cluster_endpoint #cluster endpoint
+  cluster_name     = local.cluster_name //Cluster name
+  cluster_endpoint = local.cluster_endpoint //cluster endpoint
 
-  machine_type = "controlplane" #Sets the machine type to controlplane
+  machine_type = "controlplane" //Sets the machine type to controlplane
 
   machine_secrets = talos_machine_secrets.this.machine_secrets
 
@@ -172,9 +172,9 @@ data "talos_machine_configuration" "controlplane" {
     yamlencode({
       machine = {
         install = {
-          disk = "/dev/sda" #Specify installation disk
+          disk = "/dev/sda" //Specify installation disk
           image = "Your talos image link from the talos image factory"
-          #When using proxmox you should use no-cloud with qemu guest agent installed
+          //When using proxmox you should use no-cloud with qemu guest agent installed
         }
       }
     })
@@ -187,7 +187,7 @@ Next up we apply the configuration to the controlnodes
 
 ``` c#
 resource "talos_machine_configuration_apply" "controlplane" {
-  for_each = var.control_nodes #Apply's the configuration to all control nodes
+  for_each = var.control_nodes //Apply's the configuration to all control nodes
   node     = each.value.ip_address
 
   client_configuration = talos_machine_secrets.this.client_configuration
@@ -231,10 +231,10 @@ Next up we configure the worker nodes which is done very similairly to the contr
 
 ``` c#
 data "talos_machine_configuration" "worker" {
-  cluster_name     = local.cluster_name #Cluster name
-  cluster_endpoint = local.cluster_endpoint #cluster endpoint
+  cluster_name     = local.cluster_name //Cluster name
+  cluster_endpoint = local.cluster_endpoint //cluster endpoint
 
-  machine_type = "worker" #Sets the machine type to workerplane
+  machine_type = "worker" //Sets the machine type to workerplane
 
   machine_secrets = talos_machine_secrets.this.machine_secrets
 
@@ -244,9 +244,9 @@ data "talos_machine_configuration" "worker" {
     yamlencode({
       machine = {
         install = {
-          disk = "/dev/sda" #Specify installation disk
+          disk = "/dev/sda" //Specify installation disk
           image = "Your talos image link from the talos image factory"
-          #When using proxmox you should use no-cloud with qemu guest agent installed
+          //When using proxmox you should use no-cloud with qemu guest agent installed
         }
       }
     })

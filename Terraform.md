@@ -129,20 +129,20 @@ terraform {
 local {
     talos_control_node = {
         "cp-01" = {
-            target_node = "node-1" #replace with the target node 
+            target_node = "node-1" //replace with the target node 
         }
     }
 
     talos_worker_node = {
         "wn-01" = {
-            target_node = "node-1" #replace with the target node
-            memory = 8192 #8 Gb of ram. Change this to the appropriate amount for your worker.
-            cores = 4 #Recommended for tallos worker node
+            target_node = "node-1" //replace with the target node
+            memory = 8192 //8 Gb of ram. Change this to the appropriate amount for your worker.
+            cores = 4 //Recommended for tallos worker node
         },
         "wn-02" = {
-            target_node = "node-1" #replace with the target node
-            memory = 8192 #8 Gb of ram. Change this to the appropriate amount for your worker.
-            cores = 4 #Recommended for tallos worker node
+            target_node = "node-1" //replace with the target node
+            memory = 8192 //8 Gb of ram. Change this to the appropriate amount for your worker.
+            cores = 4 //Recommended for tallos worker node
         }
     }
 }
@@ -154,25 +154,25 @@ Here you define what resources your control node has
 ``` c#
 
 resource "proxmox_virtual_environment_vm" "Control_node" {
-    for_each = local.talos_control_node #Creates a VM for each control node defined in the code block above
+    for_each = local.talos_control_node //Creates a VM for each control node defined in the code block above
     
-    name = each.key #Grabs the name from the control node definition
-    node_name = each.value.target_node #Grabs the target node from the control node definition
+    name = each.key //Grabs the name from the control node definition
+    node_name = each.value.target_node //Grabs the target node from the control node definition
 
-    boot_order = ["scsi0", "ide2"] #This is so it always boots from disk first
+    boot_order = ["scsi0", "ide2"] //This is so it always boots from disk first
 
     agent {
-        enabled = true #enables the Qemu guest agent
+        enabled = true //enables the Qemu guest agent
     }
 
     cpu {
-        cores = 2 #2 cores can be adjusted but is recomended for Talos control node
-        type = "host" #Using type host
+        cores = 2 //2 cores can be adjusted but is recomended for Talos control node
+        type = "host" //Using type host
     }
 
     memory {
-        dedicated = 4096 #4 Gigabytes of ram can be adjusted but is recomended for Talos 
-        floating = 0 #This is for ballooning set it to dedicated to enable it
+        dedicated = 4096 //4 Gigabytes of ram can be adjusted but is recomended for Talos 
+        floating = 0 //This is for ballooning set it to dedicated to enable it
     }
 
     cdrom {
@@ -181,14 +181,14 @@ resource "proxmox_virtual_environment_vm" "Control_node" {
     }
 
     disk {
-        datastore_id = "local-lvm" #Set this to the right datastorage
+        datastore_id = "local-lvm"//Set this to the right datastorage
         interface = "scsi0"
-        size = 40 #40 Gib disk 
+        size = 40 //40 Gib disk 
     }
 
     network_device {
         bridge = "vmbr0"
-        model = "e1000" #I am using e1000 because other wise i get problems. Use what ever you need
+        model = "e1000" //I am using e1000 because other wise i get problems. Use what ever you need
     }
 }
 ``` 
@@ -196,15 +196,15 @@ resource "proxmox_virtual_environment_vm" "Control_node" {
 ### Defining the worker node
 ``` c#
 resource "proxmox_virtual_environment_vm" "Worker_node" {
-    for_each = local.talos_worker_node #Creates a VM for each Worker node defined in the code block above
+    for_each = local.talos_worker_node //Creates a VM for each Worker node defined in the code block above
     
-    name = each.key #Grabs the name from the Worker node node definition
-    node_name = each.value.target_node #Grabs the target node from the Worker node definition
+    name = each.key //Grabs the name from the Worker node node definition
+    node_name = each.value.target_node //Grabs the target node from the Worker node definition
 
     boot_order = ["scsi0", "ide2"]
 
     agent {
-        enabled = true #enables the Qemu guest agent
+        enabled = true //enables the Qemu guest agent
     }
 
     cpu {
@@ -213,8 +213,8 @@ resource "proxmox_virtual_environment_vm" "Worker_node" {
     }
 
     memory {
-        dedicated = each.value.memory #Defined in the worker node
-        floating = 0 #This is for ballooning set it to dedicated to enable it
+        dedicated = each.value.memory //Defined in the worker node
+        floating = 0 //This is for ballooning set it to dedicated to enable it
     }
 
     cdrom {
@@ -223,14 +223,14 @@ resource "proxmox_virtual_environment_vm" "Worker_node" {
     }
 
     disk {
-        datastore_id = "local-lvm" #Set this to the right datastorage
+        datastore_id = "local-lvm" //Set this to the right datastorage
         interface = "scsi0"
-        size = 50 #50 Gib disk 
+        size = 50 //50 Gib disk 
     }
 
     network_device {
         bridge = "vmbr0"
-        model = "e1000" #I am using e1000 because other wise i get problems. Use what ever you need
+        model = "e1000" //I am using e1000 because other wise i get problems. Use what ever you need
     }
 }
 ```

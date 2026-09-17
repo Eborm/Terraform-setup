@@ -8,16 +8,16 @@ Thus you replace
 ``` c#
     talos_control_node = {
         "cp-01" = {
-            target_node = "node-1" #replace with the target node 
+            target_node = "node-1" //replace with the target node 
         }
     }
 ```
 
 With 
-```
+``` c#
     talos_control_node = {
         "cp-01" = {
-            target_node = "node-1" #replace with the target node 
+            target_node = "node-1" //replace with the target node 
             mac_address = "Your reserved mac-address"
             ip_address  = "The ip related to the mac-address reservation"
         }
