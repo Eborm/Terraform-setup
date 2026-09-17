@@ -33,18 +33,18 @@ variable "proxmox-nodes" {
   ]
 }
 
-module "kubernetes" {
-  source = "./kubernetes"
+module "proxmox" {
+  source = "./proxmox"
 }
 
 module "talos-config" {
   source = "./talos-config"
 
-  control_nodes = module.kubernetes.control_nodes
+  control_nodes = module.proxmox.control_nodes
 
-  worker_nodes = module.kubernetes.worker_nodes
+  worker_nodes = module.proxmox.worker_nodes
 
   depends_on = [
-    module.kubernetes
+    module.proxmox
   ]
 }
