@@ -60,10 +60,7 @@ resource "proxmox_virtual_environment_vm" "Control_node" {
 
   agent {
     enabled = true //enables the Qemu guest agent
-
-    wait_for_ip {
-      disabled = false
-    }
+    type = "virtio"
   }
 
   cpu {
@@ -104,10 +101,7 @@ resource "proxmox_virtual_environment_vm" "Worker_node" {
 
   agent {
     enabled = true //enables the Qemu guest agent
-    
-    wait_for_ip {
-      disabled = false
-    }
+    type = "virtio"
   }
 
   cpu {
