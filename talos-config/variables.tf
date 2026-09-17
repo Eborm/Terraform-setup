@@ -1,4 +1,4 @@
-// Export the control node ip's so that terraform can use these to link them all together in the cluster
+//Map the control-nodes variables given in main.tf so the variables are usable in /talos-config/main.tf
 variable "control_nodes" {
   type = map(object({
     target_node = string
@@ -7,7 +7,7 @@ variable "control_nodes" {
   }))
 }
 
-//Export the ip's of the worker nodes so that terraform can use these to put them into the cluster
+//Map the worker-nodes variables given in main.tf so the variables are usable in /talos-config/main.tf
 variable "worker_nodes" {
   type = map(object({
     ip_addresses = list(list(string))
