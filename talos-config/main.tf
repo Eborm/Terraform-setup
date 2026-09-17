@@ -11,10 +11,8 @@ terraform {
 locals {
   cluster_name     = "Homelab" //Set this to the wanted name. I still need to think of something
   cluster_endpoint = "https://192.168.68.191:6443" //Set this to the ip of one of your control nodes or your vip if you will be using a virtual ip for you cluster
-}
 
-//Get the ip addresses for your worker nodes so these can be properly added into the cluster
-locals {
+  //Get the ip addresses for your worker nodes so these can be properly added into the cluster
   worker_ips = {
     for name, worker in var.worker_nodes :
     name => one([
