@@ -98,21 +98,21 @@ variable proxmox-nodes {
 }
 ```
 
-### Create kubernetes module
+### Create proxmox module
 From the terminal run
 ``` c#
-mkdir kubernetes
+mkdir proxmox
 ```
 
-In main.tf add so it can access the file in the kubernetes folder where we will add all of our virtual machines
+In main.tf add so it can access the file in the proxmox folder where we will add all of our virtual machines
 ``` c#
-module "kubernetes" {
-  source = "./kubernetes"
+module "proxmox" {
+  source = "./proxmox"
 }
 ```
 
 ### Setting up the VM's
-In the folder kubernetes create a main.tf file. Within this file we will define our VM's for the Talos kubernetes cluster
+In the folder proxmox create a main.tf file. Within this file we will define our VM's for the Talos kubernetes cluster
 
 ### Defining how many control nodes and worker nodes
 Within the file create 2 local variables like this and add the required providers you do not need to add the provider itself again
