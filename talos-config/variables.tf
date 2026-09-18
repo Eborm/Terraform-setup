@@ -13,3 +13,7 @@ variable "worker_nodes" {
     ip_addresses = list(list(string))
   }))
 }
+
+variable "cluster_vip" {
+  type = string
+}

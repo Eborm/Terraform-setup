@@ -82,6 +82,9 @@ module "talos-config" {
   //Add the worker nodes to the module allowing talos to then use these
   worker_nodes = module.kubernetes.worker_nodes 
 
+  //Cluster vip(virtual ip address)
+  cluster_vip = "Some ip on your lan that isn't used"
+
   //Add the dependency on 
   depends_on = [
     module.proxmox
@@ -109,6 +112,11 @@ variable "worker_nodes" {
     ip_addresses = list(list(string))
   }))
 }
+
+//Cluster VIP handels all kube-ctl traffic
+variable "cluster_vip" {
+  type = string
+}
 ```
 
 ### Creating the talos cluster configuration
@@ -133,7 +141,7 @@ The configuration for talos requires a few variables deined as
 ``` c#
 locals {
   cluster_name     = "Homelab" //Set this to whatever you want your Talos cluster to be called
-  cluster_endpoint = "https://Ip of one of your control node:6443"
+  cluster_endpoint = "https://${var.cluster_vip}:6443"
 
   //Get the ip addresses for your worker nodes so these can be properly added into the cluster
   worker_ips = {
@@ -175,6 +183,22 @@ data "talos_machine_configuration" "controlplane" {
           disk = "/dev/sda" //Specify installation disk
           image = "Your talos image link from the talos image factory"
           //When using proxmox you should use no-cloud with qemu guest agent installed
+        }
+      //Create a network interface to advertise the VIP
+        network = {
+          interfaces = [
+            {
+              deviceSelector = {
+                physical = true
+              }
+
+              dhcp = true
+
+              vip = {
+                ip = var.cluster_vip
+              }
+            }
+          ]
         }
       }
     })

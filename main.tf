@@ -44,6 +44,8 @@ module "talos-config" {
 
   worker_nodes = module.proxmox.worker_nodes
 
+  cluster_vip = "192.168.68.195"
+
   depends_on = [
     module.proxmox
   ]

@@ -10,7 +10,7 @@ terraform {
 //Setup local cluster variables
 locals {
   cluster_name     = "Homelab" //Set this to the wanted name. I still need to think of something
-  cluster_endpoint = "https://192.168.68.191:6443" //Set this to the ip of one of your control nodes or your vip if you will be using a virtual ip for you cluster
+  cluster_endpoint = "https://${var.cluster_vip}:6443" //Set this to the ip of one of your control nodes or your vip if you will be using a virtual ip for you cluster
 
   //Get the ip addresses for your worker nodes so these can be properly added into the cluster
   worker_ips = {
@@ -43,6 +43,22 @@ data "talos_machine_configuration" "controlplane" {
         install = {
           disk = "/dev/sda" //Specify installation disk
           image = "factory.talos.dev/nocloud-installer/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515:v1.13.0" //No-cloud talos version 1.13.0 with qemu guest agent extension installed
+        }
+      
+        network = {
+          interfaces = [
+            {
+              deviceSelector = {
+                physical = true
+              }
+
+              dhcp = true
+
+              vip = {
+                ip = var.cluster_vip
+              }
+            }
+          ]
         }
       }
     })
