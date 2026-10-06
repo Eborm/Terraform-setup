@@ -19,7 +19,7 @@ terraform {
 
 locals {
   kubeconfig = yamldecode(
-    file("../Infrastructure/kubeconfig")
+    file(var.kubeconfig_path)
   )
 }
 
