@@ -61,6 +61,16 @@ data "talos_machine_configuration" "controlplane" {
           ]
         }
       }
+      cluster = {
+        network = {
+          cni = {
+            name = "none"
+          }
+        }
+        proxy = {
+          disabled = true
+        }
+      }
     })
   ]
 }
@@ -132,4 +142,9 @@ resource "talos_machine_configuration_apply" "worker" {
   depends_on = [
     talos_machine_bootstrap.this
   ]
+}
+
+output "kubeconfig" {
+  value     = talos_cluster_kubeconfig.this.kubeconfig_raw
+  sensitive = true
 }

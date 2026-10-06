@@ -14,7 +14,7 @@ terraform {
 
 locals {
   kubeconfig = yamldecode(
-    file("../infrastructure/kubeconfig")
+    file("../Infrastructure/kubeconfig")
   )
 }
 
@@ -50,4 +50,8 @@ provider "helm" {
       local.kubeconfig.users[0].user["client-key-data"]
     )
   }
-} 
+}
+
+module "cilium" {
+  source = "./networking/cilium"
+}

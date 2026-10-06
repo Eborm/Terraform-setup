@@ -50,3 +50,9 @@ module "talos-config" {
     module.proxmox
   ]
 }
+
+resource "local_sensitive_file" "kubeconfig" {
+  content         = module.talos-config.kubeconfig
+  filename        = "${path.module}/kubeconfig"
+  file_permission = "0600"
+}
