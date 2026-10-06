@@ -79,3 +79,15 @@ module "cert_manager" {
   cloudflare_zone      = var.cloudflare_zone
   acme_email           = var.acme_email
 }
+
+module "traefik" {
+  source = "./services/traefik"
+
+  ingress_ip = "192.168.68.190"
+  domain     = "bramwesel.me"
+
+  depends_on = [
+    module.metallb,
+    module.cert_manager
+  ]
+}
