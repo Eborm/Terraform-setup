@@ -10,6 +10,7 @@ The roots have separate Terraform state and must be run from their own directori
 ## Prerequisites
 
 - Terraform installed and available on `PATH`
+- `kubectl` installed and available on `PATH` for cert-manager webhook readiness checks
 - Access to the Proxmox endpoint configured in `Infrastructure/main.tf`
 - Proxmox credentials supplied through an ignored `Infrastructure/secrets.auto.tfvars` file or `TF_VAR_proxmox_username` and `TF_VAR_proxmox_password`
 - A Talos-compatible Proxmox environment and the required provider access
