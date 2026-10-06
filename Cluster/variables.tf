@@ -8,3 +8,16 @@ variable "kubeconfig_path" {
     error_message = "The kubeconfig file was not found. Apply the Infrastructure root first, or pass -var='kubeconfig_path=PATH' for an existing kubeconfig."
   }
 }
+
+variable "cloudflare_api_token" {
+  type      = string
+  sensitive = true
+}
+
+variable "cloudflare_zone" {
+  type = string
+}
+
+variable "acme_email" {
+  type = string
+}   

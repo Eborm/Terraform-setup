@@ -68,3 +68,13 @@ module "metallb" {
     module.cilium
   ]
 }
+
+module "cert_manager" {
+  source = "./security/cert-manager"
+
+  cert_manager_version = "1.21.2"
+
+  cloudflare_api_token = var.cloudflare_api_token
+  cloudflare_zone      = var.cloudflare_zone
+  acme_email           = var.acme_email
+}
