@@ -43,7 +43,7 @@ resource "kubernetes_secret_v1" "cloudflare" {
     api-token = var.cloudflare_api_token
   }
 
-  data_wo_revision = 1
+  data_wo_revision = parseint(substr(sha256(var.cloudflare_api_token), 0, 8), 16)
 
   depends_on = [
     kubernetes_namespace_v1.cert_manager
@@ -56,22 +56,7 @@ resource "terraform_data" "wait_for_webhook" {
   ]
 
   provisioner "local-exec" {
-    interpreter = ["/bin/bash", "-c"]
-
-    command = <<-EOT
-      KUBECONFIG="${path.root}/../Infrastructure/kubeconfig"
-
-      echo "Waiting for cert-manager webhook..."
-
-      kubectl \
-        --kubeconfig "$KUBECONFIG" \
-        rollout status \
-        deployment/cert-manager-webhook \
-        -n cert-manager \
-        --timeout=300s
-
-      echo "cert-manager webhook is ready."
-    EOT
+    command = "kubectl --kubeconfig \"${var.kubeconfig_path}\" rollout status deployment/cert-manager-webhook --namespace cert-manager --timeout=300s"
   }
 }
 

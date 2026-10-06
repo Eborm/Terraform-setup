@@ -73,6 +73,7 @@ module "cert_manager" {
   source = "./security/cert-manager"
 
   cert_manager_version = "1.21.2"
+  kubeconfig_path      = var.kubeconfig_path
 
   cloudflare_api_token = var.cloudflare_api_token
   cloudflare_zone      = var.cloudflare_zone
