@@ -44,12 +44,47 @@ resource "helm_release" "metallb" {
   ]
 }
 
-resource "time_sleep" "wait_for_webhook" {
+resource "terraform_data" "wait_for_metallb_webhook" {
+  triggers_replace = [
+    helm_release.metallb.metadata.revision
+  ]
+
   depends_on = [
     helm_release.metallb
   ]
 
-  create_duration = "60s"
+  provisioner "local-exec" {
+    interpreter = ["/bin/bash", "-c"]
+
+    command = <<-EOT
+      KUBECONFIG="${path.root}/../Infrastructure/kubeconfig"
+
+      echo "Waiting for MetalLB webhook..."
+
+      for i in $(seq 1 60); do
+        READY="$(
+          kubectl \
+            --kubeconfig "$KUBECONFIG" \
+            get endpointslice \
+            -n metallb-system \
+            -l kubernetes.io/service-name=metallb-webhook-service \
+            -o jsonpath='{range .items[*].endpoints[*]}{.conditions.ready}{"\n"}{end}' \
+            2>/dev/null || true
+        )"
+
+        if echo "$READY" | grep -q '^true$'; then
+          echo "MetalLB webhook is ready."
+          exit 0
+        fi
+
+        echo "MetalLB webhook not ready yet ($i/60)..."
+        sleep 5
+      done
+
+      echo "ERROR: MetalLB webhook did not become ready within 5 minutes."
+      exit 1
+    EOT
+  }
 }
 
 resource "helm_release" "metallb_config" {
@@ -70,6 +105,6 @@ resource "helm_release" "metallb_config" {
   timeout = 600
 
   depends_on = [
-    time_sleep.wait_for_webhook
+    terraform_data.wait_for_metallb_webhook
   ]
 }
