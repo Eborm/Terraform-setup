@@ -1,13 +1,18 @@
 terraform {
   required_providers {
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = "3.2.1"
+    }
+
     helm = {
       source  = "hashicorp/helm"
       version = "3.3.0"
     }
 
-    kubernetes = {
-      source  = "hashicorp/kubernetes"
-      version = "3.2.1"
+    time = {
+      source  = "hashicorp/time"
+      version = "0.14.2"
     }
   }
 }
@@ -54,4 +59,12 @@ provider "helm" {
 
 module "cilium" {
   source = "./networking/cilium"
+}
+
+module "metallb" {
+  source = "./networking/metallb"
+
+  depends_on = [
+    module.cilium
+  ]
 }

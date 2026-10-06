@@ -1,0 +1,9 @@
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: ingress
+  namespace: {{ .Release.Namespace }}
+spec:
+  addresses:
+    - "{{ .Values.ingressIP }}/32"
+  autoAssign: false

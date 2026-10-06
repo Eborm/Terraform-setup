@@ -1,9 +1,9 @@
 # Terraform setup for Proxmox and Talos
 
-This repository contains two separate Terraform roots for building a Talos Kubernetes cluster on Proxmox and installing Cilium:
+This repository contains two separate Terraform roots for building a Talos Kubernetes cluster on Proxmox and installing Cilium and MetalLB:
 
 - `Infrastructure/` provisions the Proxmox VMs and Talos cluster. It writes the generated Kubernetes kubeconfig to `Infrastructure/kubeconfig`.
-- `Cluster/` reads a kubeconfig and installs Cilium with Helm.
+- `Cluster/` reads a kubeconfig and installs Cilium and MetalLB with Helm. MetalLB advertises the configured ingress address on the local Layer 2 network.
 
 The roots have separate Terraform state and must be run from their own directories. Terraform does not create an automatic dependency between them.
 
@@ -66,7 +66,10 @@ Infrastructure/
 Cluster/
 	main.tf                 Kubernetes and Helm providers
 	networking/cilium/      Cilium Helm release
+	networking/metallb/     MetalLB Helm release and configuration
 ```
+
+The MetalLB configuration creates a Layer 2 `IPAddressPool` for the `ingress_ip` value. The pool uses `autoAssign: false`, so workloads must explicitly request it through a matching MetalLB service annotation or `LoadBalancerClass` configuration.
 
 For detailed Proxmox permissions and Talos notes, see [Infrastructure/Terraform.md](Infrastructure/Terraform.md) and [Infrastructure/talos-config/Talos.md](Infrastructure/talos-config/Talos.md).
 
