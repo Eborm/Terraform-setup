@@ -108,6 +108,9 @@ secret/
 credentials/
 credential/
 
+# Generated Kubernetes credentials
+Infrastructure/kubeconfig
+
 # Common cloud credential files
 .aws/
 .gcloud/

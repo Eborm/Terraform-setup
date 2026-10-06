@@ -1,30 +1,84 @@
-# Terraform-setup (Proxmox)
+# Terraform setup for Proxmox and Talos
 
-A lightweight repository containing Terraform configuration and notes for managing Proxmox VMs with the bpg/proxmox provider.
+This repository contains two separate Terraform roots for building a Talos Kubernetes cluster on Proxmox and installing Cilium:
 
-This repo is intended as a personal toolkit and reference for provisioning QEMU VMs on a Proxmox cluster using Terraform. Detailed setup instructions and examples (including Talos/Kubernetes VM examples) live in Terraform.md — see that file for the full quick start and configuration steps.
+- `Infrastructure/` provisions the Proxmox VMs and Talos cluster. It writes the generated Kubernetes kubeconfig to `Infrastructure/kubeconfig`.
+- `Cluster/` reads a kubeconfig and installs Cilium with Helm.
 
-## Highlights
-- Provider configuration and variables for Proxmox
-- A small `kubernetes/` module demonstrating how VMs are declared with Terraform
-- Examples and notes in Terraform.md describing roles, ACLs, and recommended workflows
+The roots have separate Terraform state and must be run from their own directories. Terraform does not create an automatic dependency between them.
+
+## Prerequisites
+
+- Terraform installed and available on `PATH`
+- Access to the Proxmox endpoint configured in `Infrastructure/main.tf`
+- Proxmox credentials supplied through an ignored `Infrastructure/secrets.auto.tfvars` file or `TF_VAR_proxmox_username` and `TF_VAR_proxmox_password`
+- A Talos-compatible Proxmox environment and the required provider access
+
+Do not commit passwords, kubeconfigs, Terraform state, or other generated credentials. These files are ignored by Git. Review the provider versions in each root before changing them.
+
+## First-time bootstrap
+
+Run the roots in this order:
+
+```text
+Infrastructure -> Cluster
+```
+
+From the repository root:
+
+```powershell
+Set-Location Infrastructure
+terraform init
+terraform validate
+terraform plan
+terraform apply
+
+Set-Location ..\Cluster
+terraform init
+terraform validate
+terraform plan
+terraform apply
+```
+
+The `Infrastructure` apply must finish first. Its `local_sensitive_file.kubeconfig` resource creates `Infrastructure/kubeconfig`; that file is the input used by the `Cluster` root. A fresh checkout does not contain the file, and planning `Cluster` before the first `Infrastructure` apply fails during kubeconfig loading. The `Cluster` variable validation reports this as a missing-file error instead of allowing a less clear provider error.
+
+## Supplying another kubeconfig
+
+The default input is `../Infrastructure/kubeconfig`, resolved while running Terraform from the `Cluster` directory. To use a different existing kubeconfig, pass its path explicitly:
+
+```powershell
+Set-Location Cluster
+terraform plan -var='kubeconfig_path=C:\path\to\kubeconfig'
+terraform apply -var='kubeconfig_path=C:\path\to\kubeconfig'
+```
+
+The supplied file must be a YAML kubeconfig containing cluster, user, certificate, and client-key data. Keep it outside Git and protect its permissions because it contains cluster credentials.
 
 ## Repository layout
-- main.tf — top-level Terraform that configures the provider and loads modules
-- variables.tf — variable definitions for sensitive credentials
-- kubernetes/main.tf — module for Talos/Kubernetes VM definitions (example)
-- Terraform.md — setup guide and quick start (detailed instructions)
-- .terraform.lock.hcl — pinned provider hashes
-- .gitignore — files and secrets to exclude from commits
 
-## Quick pointer
-Clone the repository and read Terraform.md for step-by-step setup, recommended ACLs, and examples:
-- Terraform.md — the primary guide for provisioning and configuring VMs via Terraform in this repo
+```text
+Infrastructure/
+	main.tf                 Proxmox and Talos root
+	talos-config/           Talos cluster configuration
+	proxmox/                VM definitions
+	kubeconfig              Generated, ignored kubeconfig
 
-## Security note
-Do not commit credentials or secret tfvars files. Use .gitignore and local overrides (e.g., secrets.auto.tfvars or environment variables) to keep sensitive data out of source control.
+Cluster/
+	main.tf                 Kubernetes and Helm providers
+	networking/cilium/      Cilium Helm release
+```
 
-## Contributing
-This repo is maintained as a personal reference. If you want to propose changes:
-- Open an issue or pull request with a concise description of the change.
-- Avoid committing any secrets or private data.
+For detailed Proxmox permissions and Talos notes, see [Infrastructure/Terraform.md](Infrastructure/Terraform.md) and [Infrastructure/talos-config/Talos.md](Infrastructure/talos-config/Talos.md).
+
+## Common commands
+
+Run Terraform commands from the root being changed. Check the plan before applying it, especially when changing VM definitions or Cilium settings.
+
+```powershell
+terraform fmt -recursive
+terraform validate
+terraform plan
+terraform apply
+```
+
+To destroy the environment, destroy `Cluster` first and `Infrastructure` second so the Kubernetes provider is not left pointing at removed infrastructure.

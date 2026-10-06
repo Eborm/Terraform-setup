@@ -176,15 +176,14 @@ data "talos_machine_configuration" "controlplane" {
 
   talos_version = "Your talos version"
 
-  config_patches = [
+config_patches = [
     yamlencode({
       machine = {
         install = {
           disk = "/dev/sda" //Specify installation disk
-          image = "Your talos image link from the talos image factory"
-          //When using proxmox you should use no-cloud with qemu guest agent installed
+          image = "factory.talos.dev/nocloud-installer/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515:v1.13.0" //No-cloud talos version 1.13.0 with qemu guest agent extension installed
         }
-      //Create a network interface to advertise the VIP
+      
         network = {
           interfaces = [
             {
@@ -199,6 +198,16 @@ data "talos_machine_configuration" "controlplane" {
               }
             }
           ]
+        }
+      } //Only add this last part in if you are going to use a different CNI then kube-proxy and flannel that come standerd. I will be using cilium.
+      cluster = {
+        network = {
+          cni = {
+            name = "none"
+          }
+        }
+        proxy = {
+          disabled = true
         }
       }
     })
