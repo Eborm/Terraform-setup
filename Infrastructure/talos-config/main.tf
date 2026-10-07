@@ -42,7 +42,7 @@ data "talos_machine_configuration" "controlplane" {
       machine = {
         install = {
           disk = "/dev/sda" //Specify installation disk
-          image = "factory.talos.dev/nocloud-installer/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515:v1.13.0" //No-cloud talos version 1.13.0 with qemu guest agent extension installed
+          image = "factory.talos.dev/metal-installer/dc7b152cb3ea99b821fcb7340ce7168313ce393d663740b791c36f6e95fc8586:v1.13.0" //No-cloud talos version 1.13.0 with qemu guest agent extension installed
         }
       
         network = {
@@ -122,7 +122,7 @@ data "talos_machine_configuration" "worker" {
       machine = {
         install = {
           disk = "/dev/sda"
-          image = "factory.talos.dev/nocloud-installer/ce4c980550dd2ab1b17bbf2b08801c7eb59418eafe8f279833297925d67c7515:v1.13.0"
+          image = "factory.talos.dev/metal-installer/dc7b152cb3ea99b821fcb7340ce7168313ce393d663740b791c36f6e95fc8586:v1.13.0"
         }
       }
     })
