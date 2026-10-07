@@ -4,6 +4,31 @@ resource "kubernetes_namespace_v1" "traefik" {
   }
 }
 
+resource "helm_release" "traefik_certificate" {
+  name = "traefik-certificate"
+
+  chart = "${path.module}/config-chart"
+
+  namespace = kubernetes_namespace_v1.traefik.metadata[0].name
+
+  create_namespace = false
+
+  wait    = true
+  atomic  = true
+  timeout = 1200
+
+  values = [
+    yamlencode({
+      domain     = var.domain
+      issuerName = var.certificate_issuer
+    })
+  ]
+
+  depends_on = [
+    kubernetes_namespace_v1.traefik
+  ]
+}
+
 resource "helm_release" "traefik" {
   name       = "traefik"
   repository = "https://traefik.github.io/charts"
@@ -31,7 +56,10 @@ resource "helm_release" "traefik" {
 
       providers = {
         kubernetesCRD = {
-          enabled = true
+          enabled                      = true
+          allowCrossNamespace          = false
+          safeNaming                   = true
+          defaultTLSResourcesNamespace = "traefik"
         }
 
         kubernetesIngress = {
@@ -76,6 +104,8 @@ resource "helm_release" "traefik" {
           exposedPort = 80
 
           http = {
+            aliasHeadersStrategy = "delete"
+
             redirections = {
               entryPoint = {
                 to        = "websecure"
@@ -96,6 +126,8 @@ resource "helm_release" "traefik" {
           exposedPort = 443
 
           http = {
+            aliasHeadersStrategy = "delete"
+
             tls = {
               enabled = true
             }
@@ -128,39 +160,10 @@ resource "helm_release" "traefik" {
           }
         }
       ]
-
-      # cert-manager Certificate.
-      # cert-manager is installed by our infrastructure dependency
-      # before this Helm release.
-      extraObjects = [
-        {
-          apiVersion = "cert-manager.io/v1"
-          kind       = "Certificate"
-
-          metadata = {
-            name      = "bramwesel-me"
-            namespace = "{{ .Release.Namespace }}"
-          }
-
-          spec = {
-            secretName = "bramwesel-me-tls"
-
-            issuerRef = {
-              name = "letsencrypt-production"
-              kind = "ClusterIssuer"
-            }
-
-            dnsNames = [
-              var.domain,
-              "*.${var.domain}"
-            ]
-          }
-        }
-      ]
     })
   ]
 
   depends_on = [
-    kubernetes_namespace_v1.traefik
+    helm_release.traefik_certificate
   ]
 }
