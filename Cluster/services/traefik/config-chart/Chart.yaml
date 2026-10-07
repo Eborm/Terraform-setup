@@ -1,0 +1,5 @@
+apiVersion: v2
+name: traefik-certificate
+description: Production TLS certificate for Traefik
+type: application
+version: 1.0.0

@@ -12,3 +12,9 @@ variable "domain" {
   type    = string
   default = "bramwesel.me"
 }
+
+variable "certificate_issuer" {
+  description = "ClusterIssuer used for the Traefik certificate."
+  type        = string
+  default     = "letsencrypt-production"
+}
