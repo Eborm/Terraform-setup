@@ -106,6 +106,10 @@ resource "helm_release" "traefik" {
           http = {
             aliasHeadersStrategy = "delete"
 
+            middlewares = [
+              "traefik-cloudflare-only@kubernetescrd"
+            ]
+
             redirections = {
               entryPoint = {
                 to        = "websecure"
@@ -127,6 +131,10 @@ resource "helm_release" "traefik" {
 
           http = {
             aliasHeadersStrategy = "delete"
+
+            middlewares = [
+              "traefik-cloudflare-only@kubernetescrd"
+            ]
 
             tls = {
               enabled = true
