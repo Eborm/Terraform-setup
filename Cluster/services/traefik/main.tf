@@ -107,7 +107,7 @@ resource "helm_release" "traefik" {
             aliasHeadersStrategy = "delete"
 
             middlewares = [
-              "cloudflare-only@kubernetescrd"
+              "traefik-cloudflare-only@kubernetescrd"
             ]
 
             redirections = {
