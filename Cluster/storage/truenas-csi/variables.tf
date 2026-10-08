@@ -17,15 +17,22 @@ variable "truenas_api_key" {
 }
 
 variable "insecure_skip_tls" {
-  description = "Disable TrueNAS API TLS certificate verification. Use only for explicitly trusted self-signed certificates."
+  description = "Disable TrueNAS API TLS certificate verification. Only use this when certificate verification cannot be configured."
   type        = bool
   default     = false
 }
 
-variable "ca_bundle" {
-  description = "PEM-encoded CA certificate used to validate the TrueNAS API certificate."
+variable "truenas_ca_certificate" {
+  description = "PEM-encoded CA certificate used to verify the TrueNAS API certificate."
   type        = string
-  default     = ""
+  sensitive   = true
+  nullable    = true
+  default     = null
+
+  validation {
+    condition = var.insecure_skip_tls || var.truenas_ca_certificate != null
+    error_message = "truenas_ca_certificate must be provided when insecure_skip_tls is false."
+  }
 }
 
 variable "postrender_runtime" {

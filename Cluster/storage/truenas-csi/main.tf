@@ -25,6 +25,19 @@ resource "kubernetes_secret_v1" "truenas_api" {
   data_wo_revision = parseint(substr(sha256(var.truenas_api_key), 0, 8), 16)
 }
 
+resource "kubernetes_config_map_v1" "truenas_ca" {
+  count = var.truenas_ca_certificate != null ? 1 : 0
+
+  metadata {
+    name      = "truenas-ca"
+    namespace = kubernetes_namespace_v1.truenas_csi.metadata[0].name
+  }
+
+  data = {
+    "ca.crt" = var.truenas_ca_certificate
+  }
+}
+
 resource "helm_release" "truenas_csi" {
   name = "truenas-csi"
 
@@ -56,14 +69,13 @@ resource "helm_release" "truenas_csi" {
   values = [
     yamlencode({
       truenas = {
-        url = "wss://${var.truenas_host}"
+        url = "wss://${var.truenas_host}/api/current"
 
         defaultPool = var.truenas_pool
 
         nfsServer = var.truenas_host
 
         insecureSkipTLS = var.insecure_skip_tls
-        caBundle        = var.ca_bundle
 
         existingSecret    = kubernetes_secret_v1.truenas_api.metadata[0].name
         existingSecretKey = "api-key"

@@ -86,6 +86,10 @@ module "traefik" {
   ingress_ip = "192.168.68.190"
   domain     = "bramwesel.me"
 
+  truenas_host      = "192.168.68.148"
+  truenas_hostname  = "truenas.bramwesel.me"
+  truenas_ca_bundle = var.truenas_ca_bundle
+
   depends_on = [
     module.metallb,
     module.cert_manager
@@ -95,12 +99,12 @@ module "traefik" {
 module "truenas_csi" {
   source = "./storage/truenas-csi"
 
-  truenas_host       = "192.168.68.148"
-  truenas_pool       = "Storage"
-  truenas_api_key    = var.truenas_api_key
-  insecure_skip_tls  = var.truenas_insecure_skip_tls
-  ca_bundle          = var.truenas_ca_bundle
-  postrender_runtime = var.truenas_postrender_runtime
+  truenas_host           = "192.168.68.148"
+  truenas_pool           = "Storage"
+  truenas_api_key        = var.truenas_api_key
+  insecure_skip_tls      = var.truenas_insecure_skip_tls
+  truenas_ca_certificate = var.truenas_ca_bundle
+  postrender_runtime     = var.truenas_postrender_runtime
 
   depends_on = [
     module.cilium

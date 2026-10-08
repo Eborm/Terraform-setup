@@ -4,6 +4,125 @@ resource "kubernetes_namespace_v1" "traefik" {
   }
 }
 
+resource "kubernetes_secret_v1" "truenas_ca" {
+  count = var.truenas_ca_bundle != "" ? 1 : 0
+
+  metadata {
+    name      = "truenas-ca"
+    namespace = kubernetes_namespace_v1.traefik.metadata[0].name
+  }
+
+  type = "Opaque"
+
+  data = {
+    "ca.crt" = var.truenas_ca_bundle
+  }
+}
+
+resource "kubernetes_service_v1" "truenas" {
+  metadata {
+    name      = "truenas"
+    namespace = kubernetes_namespace_v1.traefik.metadata[0].name
+  }
+
+  spec {
+    port {
+      name        = "https"
+      port        = 443
+      target_port = 443
+      protocol    = "TCP"
+    }
+  }
+}
+
+resource "kubernetes_endpoints_v1" "truenas" {
+  metadata {
+    name      = kubernetes_service_v1.truenas.metadata[0].name
+    namespace = kubernetes_namespace_v1.traefik.metadata[0].name
+  }
+
+  subset {
+    address {
+      ip = var.truenas_host
+    }
+
+    port {
+      name     = "https"
+      port     = 443
+      protocol = "TCP"
+    }
+  }
+}
+
+resource "kubernetes_manifest" "truenas_servers_transport" {
+  manifest = {
+    apiVersion = "traefik.io/v1alpha1"
+    kind       = "ServersTransport"
+
+    metadata = {
+      name      = "truenas"
+      namespace = kubernetes_namespace_v1.traefik.metadata[0].name
+    }
+
+    spec = {
+      serverName = var.truenas_hostname
+
+      rootCAsSecrets = var.truenas_ca_bundle != "" ? [
+        kubernetes_secret_v1.truenas_ca[0].metadata[0].name
+      ] : []
+
+      insecureSkipVerify = var.truenas_ca_bundle == ""
+    }
+  }
+
+  depends_on = [
+    kubernetes_secret_v1.truenas_ca
+  ]
+}
+
+resource "kubernetes_manifest" "truenas_ingressroute" {
+  manifest = {
+    apiVersion = "traefik.io/v1alpha1"
+    kind       = "IngressRoute"
+
+    metadata = {
+      name      = "truenas"
+      namespace = kubernetes_namespace_v1.traefik.metadata[0].name
+    }
+
+    spec = {
+      entryPoints = [
+        "websecure"
+      ]
+
+      routes = [
+        {
+          match = "Host(`${var.truenas_hostname}`)"
+          kind  = "Rule"
+
+          services = [
+            {
+              name            = kubernetes_service_v1.truenas.metadata[0].name
+              port            = 443
+              scheme          = "https"
+              serversTransport = kubernetes_manifest.truenas_servers_transport.manifest.metadata.name
+            }
+          ]
+        }
+      ]
+
+      tls = {}
+    }
+  }
+
+  depends_on = [
+    helm_release.traefik,
+    kubernetes_service_v1.truenas,
+    kubernetes_endpoints_v1.truenas,
+    kubernetes_manifest.truenas_servers_transport
+  ]
+}
+
 resource "helm_release" "traefik_certificate" {
   name = "traefik-certificate"
 
@@ -218,3 +337,4 @@ resource "helm_release" "traefik" {
     helm_release.traefik_certificate
   ]
 }
+

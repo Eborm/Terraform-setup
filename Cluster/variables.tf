@@ -34,12 +34,6 @@ variable "truenas_insecure_skip_tls" {
   default     = false
 }
 
-variable "truenas_ca_bundle" {
-  description = "PEM-encoded CA certificate used to validate the TrueNAS API certificate."
-  type        = string
-  default     = ""
-}
-
 variable "truenas_postrender_runtime" {
   description = "Executable used for the Helm post-renderer: bash on WSL/Linux or pwsh on native Windows."
   type        = string
@@ -48,5 +42,16 @@ variable "truenas_postrender_runtime" {
   validation {
     condition     = contains(["bash", "pwsh"], var.truenas_postrender_runtime)
     error_message = "truenas_postrender_runtime must be either bash or pwsh."
+  }
+}
+
+variable "truenas_ca_bundle" {
+  description = "PEM-encoded CA certificate used to validate the TrueNAS HTTPS certificate."
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = trimspace(var.truenas_ca_bundle) != ""
+    error_message = "truenas_ca_bundle must contain the CA certificate used to validate the TrueNAS HTTPS certificate."
   }
 }
