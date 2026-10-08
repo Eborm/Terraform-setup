@@ -10,7 +10,7 @@ The roots have separate Terraform state and must be run from their own directori
 ## Prerequisites
 
 - Terraform installed and available on `PATH`
-- Bash and Python 3 installed and available on `PATH` when running Terraform in WSL/Linux (the default TrueNAS CSI post-renderer runtime)
+- Bash and `awk` installed and available on `PATH` when running Terraform in WSL/Linux (the default TrueNAS CSI post-renderer runtime)
 - `kubectl` installed and available on `PATH` for cert-manager webhook readiness checks
 - Access to the Proxmox endpoint configured in `Infrastructure/main.tf`
 - Proxmox credentials supplied through an ignored `Infrastructure/secrets.auto.tfvars` file or `TF_VAR_proxmox_username` and `TF_VAR_proxmox_password`
