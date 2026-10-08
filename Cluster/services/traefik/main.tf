@@ -279,7 +279,7 @@ resource "helm_release" "traefik" {
 }
 
 resource "kubernetes_secret_v1" "truenas_ca" {
-  count = var.truenas_ca_bundle != "" ? 1 : 0
+  count = 1
 
   metadata {
     name      = "truenas-ca"
