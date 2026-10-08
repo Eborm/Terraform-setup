@@ -22,7 +22,7 @@ resource "kubernetes_secret_v1" "truenas_api" {
     "api-key" = var.truenas_api_key
   }
 
-  data_wo_revision = 1
+  data_wo_revision = parseint(substr(sha256(var.truenas_api_key), 0, 8), 16)
 }
 
 resource "helm_release" "truenas_csi" {
@@ -41,7 +41,16 @@ resource "helm_release" "truenas_csi" {
   timeout = 600
 
   postrender = {
-    binary_path = "${path.module}/postrender-truenas-csi.sh"
+    binary_path = var.postrender_runtime == "pwsh" ? "pwsh" : "bash"
+    args = var.postrender_runtime == "pwsh" ? [
+      "-NoLogo",
+      "-NoProfile",
+      "-NonInteractive",
+      "-File",
+      "${path.module}/postrender-truenas-csi.ps1"
+      ] : [
+      "${path.module}/postrender-truenas-csi.sh"
+    ]
   }
 
   values = [
@@ -53,11 +62,10 @@ resource "helm_release" "truenas_csi" {
 
         nfsServer = var.truenas_host
 
-        # TrueNAS uses a self-signed certificate by default.
-        # We can replace this with proper CA validation later.
-        insecureSkipTLS = true
+        insecureSkipTLS = var.insecure_skip_tls
+        caBundle        = var.ca_bundle
 
-        existingSecret = kubernetes_secret_v1.truenas_api.metadata[0].name
+        existingSecret    = kubernetes_secret_v1.truenas_api.metadata[0].name
         existingSecretKey = "api-key"
       }
 

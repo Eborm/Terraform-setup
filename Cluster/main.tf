@@ -95,9 +95,12 @@ module "traefik" {
 module "truenas_csi" {
   source = "./storage/truenas-csi"
 
-  truenas_host    = "192.168.68.148"
-  truenas_pool    = "Storage"
-  truenas_api_key = var.truenas_api_key
+  truenas_host       = "192.168.68.148"
+  truenas_pool       = "Storage"
+  truenas_api_key    = var.truenas_api_key
+  insecure_skip_tls  = var.truenas_insecure_skip_tls
+  ca_bundle          = var.truenas_ca_bundle
+  postrender_runtime = var.truenas_postrender_runtime
 
   depends_on = [
     module.cilium

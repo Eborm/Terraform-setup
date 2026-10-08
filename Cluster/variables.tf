@@ -20,10 +20,33 @@ variable "cloudflare_zone" {
 
 variable "acme_email" {
   type = string
-}   
+}
 
 variable "truenas_api_key" {
   description = "API key for the TrueNAS Kubernetes CSI user."
   type        = string
   sensitive   = true
+}
+
+variable "truenas_insecure_skip_tls" {
+  description = "Disable TrueNAS API TLS certificate verification. Use only for explicitly trusted self-signed certificates."
+  type        = bool
+  default     = false
+}
+
+variable "truenas_ca_bundle" {
+  description = "PEM-encoded CA certificate used to validate the TrueNAS API certificate."
+  type        = string
+  default     = ""
+}
+
+variable "truenas_postrender_runtime" {
+  description = "Executable used for the Helm post-renderer: bash on WSL/Linux or pwsh on native Windows."
+  type        = string
+  default     = "bash"
+
+  validation {
+    condition     = contains(["bash", "pwsh"], var.truenas_postrender_runtime)
+    error_message = "truenas_postrender_runtime must be either bash or pwsh."
+  }
 }
