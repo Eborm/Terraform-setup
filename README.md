@@ -10,6 +10,7 @@ The roots have separate Terraform state and must be run from their own directori
 ## Prerequisites
 
 - Terraform installed and available on `PATH`
+- Bash and `awk` installed and available on `PATH` when running Terraform in WSL/Linux (the default TrueNAS CSI post-renderer runtime)
 - `kubectl` installed and available on `PATH` for cert-manager webhook readiness checks
 - Access to the Proxmox endpoint configured in `Infrastructure/main.tf`
 - Proxmox credentials supplied through an ignored `Infrastructure/secrets.auto.tfvars` file or `TF_VAR_proxmox_username` and `TF_VAR_proxmox_password`
@@ -54,6 +55,10 @@ terraform apply -var='kubeconfig_path=C:\path\to\kubeconfig'
 ```
 
 The supplied file must be a YAML kubeconfig containing cluster, user, certificate, and client-key data. Keep it outside Git and protect its permissions because it contains cluster credentials.
+
+The TrueNAS CSI module verifies the TrueNAS API certificate by default. For a deliberately trusted self-signed certificate, set `truenas_insecure_skip_tls=true`; this disables certificate verification and should not be used on an untrusted network. The pinned TrueNAS CSI chart does not support configuring a private CA bundle.
+
+When running Terraform natively on Windows, install PowerShell 7 and run with `-var='truenas_postrender_runtime=pwsh'` instead of the default Bash runtime.
 
 ## Repository layout
 
