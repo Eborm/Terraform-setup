@@ -91,3 +91,15 @@ module "traefik" {
     module.cert_manager
   ]
 }
+
+module "truenas_csi" {
+  source = "./storage/truenas-csi"
+
+  truenas_host    = "192.168.68.148"
+  truenas_pool    = "Storage"
+  truenas_api_key = var.truenas_api_key
+
+  depends_on = [
+    module.cilium
+  ]
+}

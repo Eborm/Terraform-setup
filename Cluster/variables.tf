@@ -21,3 +21,9 @@ variable "cloudflare_zone" {
 variable "acme_email" {
   type = string
 }   
+
+variable "truenas_api_key" {
+  description = "API key for the TrueNAS Kubernetes CSI user."
+  type        = string
+  sensitive   = true
+}
