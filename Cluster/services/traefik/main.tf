@@ -4,125 +4,6 @@ resource "kubernetes_namespace_v1" "traefik" {
   }
 }
 
-resource "kubernetes_secret_v1" "truenas_ca" {
-  count = var.truenas_ca_bundle != "" ? 1 : 0
-
-  metadata {
-    name      = "truenas-ca"
-    namespace = kubernetes_namespace_v1.traefik.metadata[0].name
-  }
-
-  type = "Opaque"
-
-  data = {
-    "ca.crt" = var.truenas_ca_bundle
-  }
-}
-
-resource "kubernetes_service_v1" "truenas" {
-  metadata {
-    name      = "truenas"
-    namespace = kubernetes_namespace_v1.traefik.metadata[0].name
-  }
-
-  spec {
-    port {
-      name        = "https"
-      port        = 443
-      target_port = 443
-      protocol    = "TCP"
-    }
-  }
-}
-
-resource "kubernetes_endpoints_v1" "truenas" {
-  metadata {
-    name      = kubernetes_service_v1.truenas.metadata[0].name
-    namespace = kubernetes_namespace_v1.traefik.metadata[0].name
-  }
-
-  subset {
-    address {
-      ip = var.truenas_host
-    }
-
-    port {
-      name     = "https"
-      port     = 443
-      protocol = "TCP"
-    }
-  }
-}
-
-resource "kubernetes_manifest" "truenas_servers_transport" {
-  manifest = {
-    apiVersion = "traefik.io/v1alpha1"
-    kind       = "ServersTransport"
-
-    metadata = {
-      name      = "truenas"
-      namespace = kubernetes_namespace_v1.traefik.metadata[0].name
-    }
-
-    spec = {
-      serverName = var.truenas_hostname
-
-      rootCAsSecrets = var.truenas_ca_bundle != "" ? [
-        kubernetes_secret_v1.truenas_ca[0].metadata[0].name
-      ] : []
-
-      insecureSkipVerify = var.truenas_ca_bundle == ""
-    }
-  }
-
-  depends_on = [
-    kubernetes_secret_v1.truenas_ca
-  ]
-}
-
-resource "kubernetes_manifest" "truenas_ingressroute" {
-  manifest = {
-    apiVersion = "traefik.io/v1alpha1"
-    kind       = "IngressRoute"
-
-    metadata = {
-      name      = "truenas"
-      namespace = kubernetes_namespace_v1.traefik.metadata[0].name
-    }
-
-    spec = {
-      entryPoints = [
-        "websecure"
-      ]
-
-      routes = [
-        {
-          match = "Host(`${var.truenas_hostname}`)"
-          kind  = "Rule"
-
-          services = [
-            {
-              name            = kubernetes_service_v1.truenas.metadata[0].name
-              port            = 443
-              scheme          = "https"
-              serversTransport = kubernetes_manifest.truenas_servers_transport.manifest.metadata.name
-            }
-          ]
-        }
-      ]
-
-      tls = {}
-    }
-  }
-
-  depends_on = [
-    helm_release.traefik,
-    kubernetes_service_v1.truenas,
-    kubernetes_endpoints_v1.truenas,
-    kubernetes_manifest.truenas_servers_transport
-  ]
-}
-
 resource "helm_release" "traefik_certificate" {
   name = "traefik-certificate"
 
@@ -287,54 +168,162 @@ resource "helm_release" "traefik" {
           }
         }
       ]
-      extraObjects = [{
-        apiVersion = "traefik.io/v1alpha1"
-        kind       = "Middleware"
+      extraObjects = [
+        {
+          apiVersion = "traefik.io/v1alpha1"
+          kind       = "Middleware"
 
-        metadata = {
-          name      = "cloudflare-only"
-          namespace = "{{ .Release.Namespace }}"
-        }
+          metadata = {
+            name      = "cloudflare-only"
+            namespace = "{{ .Release.Namespace }}"
+          }
 
-        spec = {
-          ipAllowList = {
-            sourceRange = [
-              # Cloudflare IPv4
-              "103.21.244.0/22",
-              "103.22.200.0/22",
-              "103.31.4.0/22",
-              "104.16.0.0/13",
-              "104.24.0.0/14",
-              "108.162.192.0/18",
-              "131.0.72.0/22",
-              "141.101.64.0/18",
-              "162.158.0.0/15",
-              "172.64.0.0/13",
-              "173.245.48.0/20",
-              "188.114.96.0/20",
-              "190.93.240.0/20",
-              "197.234.240.0/22",
-              "198.41.128.0/17",
+          spec = {
+            ipAllowList = {
+              sourceRange = [
+                # Cloudflare IPv4
+                "103.21.244.0/22",
+                "103.22.200.0/22",
+                "103.31.4.0/22",
+                "104.16.0.0/13",
+                "104.24.0.0/14",
+                "108.162.192.0/18",
+                "131.0.72.0/22",
+                "141.101.64.0/18",
+                "162.158.0.0/15",
+                "172.64.0.0/13",
+                "173.245.48.0/20",
+                "188.114.96.0/20",
+                "190.93.240.0/20",
+                "197.234.240.0/22",
+                "198.41.128.0/17",
 
-              # Cloudflare IPv6
-              "2400:cb00::/32",
-              "2606:4700::/32",
-              "2803:f800::/32",
-              "2405:b500::/32",
-              "2405:8100::/32",
-              "2a06:98c0::/29",
-              "2c0f:f248::/32"
+                # Cloudflare IPv6
+                "2400:cb00::/32",
+                "2606:4700::/32",
+                "2803:f800::/32",
+                "2405:b500::/32",
+                "2405:8100::/32",
+                "2a06:98c0::/29",
+                "2c0f:f248::/32"
+              ]
+
+              rejectStatusCode = 403
+            }
+          }
+        },
+
+        {
+          apiVersion = "traefik.io/v1alpha1"
+          kind       = "ServersTransport"
+
+          metadata = {
+            name      = "truenas"
+            namespace = "{{ .Release.Namespace }}"
+          }
+
+          spec = {
+            serverName = var.truenas_hostname
+
+            rootCAsSecrets = var.truenas_ca_bundle != "" ? [
+              kubernetes_secret_v1.truenas_ca[0].metadata[0].name
+            ] : []
+
+            insecureSkipVerify = var.truenas_ca_bundle == ""
+          }
+        },
+
+        {
+          apiVersion = "traefik.io/v1alpha1"
+          kind       = "IngressRoute"
+
+          metadata = {
+            name      = "truenas"
+            namespace = "{{ .Release.Namespace }}"
+          }
+
+          spec = {
+            entryPoints = [
+              "websecure"
             ]
 
-            rejectStatusCode = 403
+            routes = [
+              {
+                match = "Host(`${var.truenas_hostname}`)"
+                kind  = "Rule"
+
+                services = [
+                  {
+                    name             = kubernetes_service_v1.truenas.metadata[0].name
+                    port             = 443
+                    scheme           = "https"
+                    serversTransport = "truenas"
+                  }
+                ]
+              }
+            ]
+
+            tls = {}
           }
         }
-      }]
+      ]
     })
   ]
 
   depends_on = [
-    helm_release.traefik_certificate
+    helm_release.traefik_certificate,
+    kubernetes_secret_v1.truenas_ca,
+    kubernetes_service_v1.truenas,
+    kubernetes_endpoints_v1.truenas
   ]
 }
 
+resource "kubernetes_secret_v1" "truenas_ca" {
+  count = var.truenas_ca_bundle != "" ? 1 : 0
+
+  metadata {
+    name      = "truenas-ca"
+    namespace = kubernetes_namespace_v1.traefik.metadata[0].name
+  }
+
+  type = "Opaque"
+
+  data = {
+    "ca.crt" = var.truenas_ca_bundle
+  }
+}
+
+resource "kubernetes_service_v1" "truenas" {
+  metadata {
+    name      = "truenas"
+    namespace = kubernetes_namespace_v1.traefik.metadata[0].name
+  }
+
+  spec {
+    port {
+      name        = "https"
+      port        = 443
+      target_port = 443
+      protocol    = "TCP"
+    }
+  }
+}
+
+resource "kubernetes_endpoints_v1" "truenas" {
+  metadata {
+    name      = kubernetes_service_v1.truenas.metadata[0].name
+    namespace = kubernetes_namespace_v1.traefik.metadata[0].name
+  }
+
+  subset {
+    address {
+      ip = var.truenas_host
+    }
+
+    port {
+      name     = "https"
+      port     = 443
+      protocol = "TCP"
+    }
+  }
+}

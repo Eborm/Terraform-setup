@@ -49,5 +49,5 @@ variable "postrender_runtime" {
 variable "chart_version" {
   description = "TrueNAS CSI Helm chart version."
   type        = string
-  default     = "1.3.0"
+  default     = "1.4.0"
 }

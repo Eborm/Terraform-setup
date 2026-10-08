@@ -56,7 +56,7 @@ terraform apply -var='kubeconfig_path=C:\path\to\kubeconfig'
 
 The supplied file must be a YAML kubeconfig containing cluster, user, certificate, and client-key data. Keep it outside Git and protect its permissions because it contains cluster credentials.
 
-The TrueNAS CSI module verifies the TrueNAS API certificate by default. Set `truenas_ca_bundle` to the PEM-encoded issuing CA certificate when TrueNAS uses a private CA. For a deliberately trusted self-signed certificate, set `truenas_insecure_skip_tls=true`; this disables certificate verification and should not be used on an untrusted network.
+The TrueNAS CSI module verifies the TrueNAS API certificate by default. For a deliberately trusted self-signed certificate, set `truenas_insecure_skip_tls=true`; this disables certificate verification and should not be used on an untrusted network. The pinned TrueNAS CSI chart does not support configuring a private CA bundle.
 
 When running Terraform natively on Windows, install PowerShell 7 and run with `-var='truenas_postrender_runtime=pwsh'` instead of the default Bash runtime.
 
