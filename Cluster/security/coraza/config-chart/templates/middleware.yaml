@@ -1,0 +1,13 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ .Values.middlewareName | quote }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  plugin:
+    coraza:
+      directives:
+        - "SecRuleEngine {{ .Values.engineMode }}"
+        - "SecDebugLog /dev/stdout"
+        - "SecDebugLogLevel 3"
+        - 'SecRule REQUEST_URI "@streq /coraza-test" "id:10001,phase:1,log,deny,status:403,msg:Coraza-detection-test"'

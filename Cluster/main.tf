@@ -86,13 +86,16 @@ module "traefik" {
   ingress_ip = "192.168.68.190"
   domain     = "bramwesel.me"
 
+  crowdsec_bouncer_key = var.crowdsec_bouncer_key
+
   truenas_host      = "192.168.68.148"
   truenas_hostname  = "truenas.bramwesel.me"
   truenas_ca_bundle = var.truenas_ca_bundle
 
   depends_on = [
     module.metallb,
-    module.cert_manager
+    module.cert_manager,
+    module.crowdsec
   ]
 }
 
@@ -108,5 +111,27 @@ module "truenas_csi" {
 
   depends_on = [
     module.cilium
+  ]
+}
+
+module "crowdsec" {
+  source = "./security/crowdsec"
+
+  crowdsec_bouncer_key = var.crowdsec_bouncer_key
+
+  depends_on = [
+    module.truenas_csi
+  ]
+}
+
+module "coraza" {
+  source = "./security/coraza"
+
+  traefik_namespace = "traefik"
+  middleware_name   = "coraza-waf"
+  engine_mode       = "DetectionOnly"
+
+  depends_on = [
+    module.traefik
   ]
 }

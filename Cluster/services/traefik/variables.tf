@@ -41,3 +41,9 @@ variable "truenas_ca_bundle" {
     error_message = "truenas_ca_bundle must contain the CA certificate used to validate the TrueNAS HTTPS certificate."
   }
 }
+
+variable "crowdsec_bouncer_key" {
+  description = "Shared key for the CrowdSec Traefik bouncer."
+  type        = string
+  sensitive   = true
+}

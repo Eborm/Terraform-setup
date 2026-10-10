@@ -1,3 +1,34 @@
+
+locals {
+  cloudflare_ip_ranges = [
+    # Cloudflare IPv4
+    "103.21.244.0/22",
+    "103.22.200.0/22",
+    "103.31.4.0/22",
+    "104.16.0.0/13",
+    "104.24.0.0/14",
+    "108.162.192.0/18",
+    "131.0.72.0/22",
+    "141.101.64.0/18",
+    "162.158.0.0/15",
+    "172.64.0.0/13",
+    "173.245.48.0/20",
+    "188.114.96.0/20",
+    "190.93.240.0/20",
+    "197.234.240.0/22",
+    "198.41.128.0/17",
+
+    # Cloudflare IPv6
+    "2400:cb00::/32",
+    "2606:4700::/32",
+    "2803:f800::/32",
+    "2405:b500::/32",
+    "2405:8100::/32",
+    "2a06:98c0::/29",
+    "2c0f:f248::/32"
+  ]
+}
+
 resource "kubernetes_namespace_v1" "traefik" {
   metadata {
     name = "traefik"
@@ -5,12 +36,10 @@ resource "kubernetes_namespace_v1" "traefik" {
 }
 
 resource "helm_release" "traefik_certificate" {
-  name = "traefik-certificate"
-
+  name  = "traefik-certificate"
   chart = "${path.module}/config-chart"
 
-  namespace = kubernetes_namespace_v1.traefik.metadata[0].name
-
+  namespace        = kubernetes_namespace_v1.traefik.metadata[0].name
   create_namespace = false
 
   wait    = true
@@ -35,8 +64,7 @@ resource "helm_release" "traefik" {
   chart      = "traefik"
   version    = var.traefik_version
 
-  namespace = kubernetes_namespace_v1.traefik.metadata[0].name
-
+  namespace        = kubernetes_namespace_v1.traefik.metadata[0].name
   create_namespace = false
 
   wait    = true
@@ -47,12 +75,68 @@ resource "helm_release" "traefik" {
     yamlencode({
       deployment = {
         replicas = 2
+
+        additionalVolumes = [
+          {
+            name     = "plugins-storage"
+            emptyDir = {}
+          }
+        ]
       }
 
       ingressClass = {
         enabled        = true
         isDefaultClass = true
       }
+
+      # Traefik's access logs are consumed by the CrowdSec agents.
+      accessLog = {
+        enabled = true
+        format  = "json"
+
+        fields = {
+          defaultMode = "keep"
+
+          headers = {
+            defaultMode = "drop"
+
+            names = {
+              User-Agent   = "keep"
+              Content-Type = "keep"
+            }
+          }
+        }
+      }
+
+      # Load the CrowdSec bouncer plugin.
+      experimental = {
+        plugins = {
+          bouncer = {
+            moduleName = "github.com/maxlerebourg/crowdsec-bouncer-traefik-plugin"
+            version    = "v1.4.5"
+          }
+          coraza = {
+            moduleName = "github.com/jcchavezs/coraza-http-wasm-traefik"
+            version    = "v0.3.0"
+          }
+        }
+      }
+
+      # Mount the key from the Kubernetes Secret as a file.
+      volumes = [
+        {
+          name       = "crowdsec-bouncer-key"
+          mountPath  = "/etc/traefik/crowdsec"
+          type       = "secret"
+          secretName = kubernetes_secret_v1.crowdsec_bouncer_key.metadata[0].name
+          additionalVolumeMounts = [
+            {
+              name      = "plugins-storage"
+              mountPath = "/plugins-storage"
+            }
+          ]
+        }
+      ]
 
       providers = {
         kubernetesCRD = {
@@ -103,11 +187,16 @@ resource "helm_release" "traefik" {
 
           exposedPort = 80
 
+          # Only trust forwarded headers from Cloudflare proxy addresses.
+          forwardedHeaders = {
+            trustedIPs = local.cloudflare_ip_ranges
+          }
+
           http = {
             aliasHeadersStrategy = "delete"
 
             middlewares = [
-              "traefik-cloudflare-only@kubernetescrd"
+              "traefik_cloudflare-only@kubernetescrd"
             ]
 
             redirections = {
@@ -129,11 +218,17 @@ resource "helm_release" "traefik" {
 
           exposedPort = 443
 
+          forwardedHeaders = {
+            trustedIPs = local.cloudflare_ip_ranges
+          }
+
           http = {
             aliasHeadersStrategy = "delete"
 
+            # Apply Cloudflare filtering first, then CrowdSec decisions.
             middlewares = [
-              "cloudflare-only@kubernetescrd"
+              "traefik_cloudflare-only@kubernetescrd",
+              "traefik_crowdsec-bouncer@kubernetescrd"
             ]
 
             tls = {
@@ -168,6 +263,10 @@ resource "helm_release" "traefik" {
           }
         }
       ]
+
+      # Traefik CRDs are installed by this Helm chart.
+      # These objects therefore belong in this release, not the
+      # earlier certificate config-chart release.
       extraObjects = [
         {
           apiVersion = "traefik.io/v1alpha1"
@@ -180,35 +279,34 @@ resource "helm_release" "traefik" {
 
           spec = {
             ipAllowList = {
-              sourceRange = [
-                # Cloudflare IPv4
-                "103.21.244.0/22",
-                "103.22.200.0/22",
-                "103.31.4.0/22",
-                "104.16.0.0/13",
-                "104.24.0.0/14",
-                "108.162.192.0/18",
-                "131.0.72.0/22",
-                "141.101.64.0/18",
-                "162.158.0.0/15",
-                "172.64.0.0/13",
-                "173.245.48.0/20",
-                "188.114.96.0/20",
-                "190.93.240.0/20",
-                "197.234.240.0/22",
-                "198.41.128.0/17",
-
-                # Cloudflare IPv6
-                "2400:cb00::/32",
-                "2606:4700::/32",
-                "2803:f800::/32",
-                "2405:b500::/32",
-                "2405:8100::/32",
-                "2a06:98c0::/29",
-                "2c0f:f248::/32"
-              ]
-
+              sourceRange      = local.cloudflare_ip_ranges
               rejectStatusCode = 403
+            }
+          }
+        },
+
+        {
+          apiVersion = "traefik.io/v1alpha1"
+          kind       = "Middleware"
+
+          metadata = {
+            name      = "crowdsec-bouncer"
+            namespace = "{{ .Release.Namespace }}"
+          }
+
+          spec = {
+            plugin = {
+              bouncer = {
+                enabled             = true
+                crowdsecMode        = "stream"
+                crowdsecLapiScheme  = "http"
+                crowdsecLapiHost    = "crowdsec-service.crowdsec.svc.cluster.local:8080"
+                crowdsecLapiPath    = "/"
+                crowdsecLapiKeyFile = "/etc/traefik/crowdsec/BOUNCER_KEY_traefik"
+
+                # Trust X-Forwarded-For only when the proxy is Cloudflare.
+                forwardedHeadersTrustedIps = local.cloudflare_ip_ranges
+              }
             }
           }
         },
@@ -225,8 +323,12 @@ resource "helm_release" "traefik" {
           spec = {
             serverName = var.truenas_hostname
 
-            rootCAsSecrets = var.truenas_ca_bundle != "" ? [
-              kubernetes_secret_v1.truenas_ca[0].metadata[0].name
+            # Use the current rootCAs syntax instead of deprecated
+            # rootCAsSecrets.
+            rootCAs = var.truenas_ca_bundle != "" ? [
+              {
+                secret = kubernetes_secret_v1.truenas_ca[0].metadata[0].name
+              }
             ] : []
 
             insecureSkipVerify = var.truenas_ca_bundle == ""
@@ -274,7 +376,9 @@ resource "helm_release" "traefik" {
     helm_release.traefik_certificate,
     kubernetes_secret_v1.truenas_ca,
     kubernetes_service_v1.truenas,
-    kubernetes_endpoints_v1.truenas
+    kubernetes_endpoints_v1.truenas,
+    kubernetes_secret_v1.crowdsec_bouncer_key,
+    kubernetes_namespace_v1.traefik
   ]
 }
 
@@ -326,4 +430,19 @@ resource "kubernetes_endpoints_v1" "truenas" {
       protocol = "TCP"
     }
   }
+}
+
+resource "kubernetes_secret_v1" "crowdsec_bouncer_key" {
+  metadata {
+    name      = "crowdsec-bouncer-key"
+    namespace = kubernetes_namespace_v1.traefik.metadata[0].name
+  }
+
+  type = "Opaque"
+
+  data_wo = {
+    "BOUNCER_KEY_traefik" = var.crowdsec_bouncer_key
+  }
+
+  data_wo_revision = parseint(substr(sha256(var.crowdsec_bouncer_key), 0, 8), 16)
 }

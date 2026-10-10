@@ -30,7 +30,7 @@ variable "truenas_ca_certificate" {
   default     = null
 
   validation {
-    condition = var.insecure_skip_tls || var.truenas_ca_certificate != null
+    condition     = var.insecure_skip_tls || var.truenas_ca_certificate != null
     error_message = "truenas_ca_certificate must be provided when insecure_skip_tls is false."
   }
 }
