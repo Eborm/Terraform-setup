@@ -129,12 +129,6 @@ resource "helm_release" "traefik" {
           mountPath  = "/etc/traefik/crowdsec"
           type       = "secret"
           secretName = kubernetes_secret_v1.crowdsec_bouncer_key.metadata[0].name
-          additionalVolumeMounts = [
-            {
-              name      = "plugins-storage"
-              mountPath = "/plugins-storage"
-            }
-          ]
         }
       ]
 
@@ -228,7 +222,8 @@ resource "helm_release" "traefik" {
             # Apply Cloudflare filtering first, then CrowdSec decisions.
             middlewares = [
               "traefik_cloudflare-only@kubernetescrd",
-              "traefik_crowdsec-bouncer@kubernetescrd"
+              "traefik_crowdsec-bouncer@kubernetescrd",
+              "traefik_coraza-waf@kubernetescrd"
             ]
 
             tls = {

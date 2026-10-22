@@ -129,7 +129,17 @@ module "coraza" {
 
   traefik_namespace = "traefik"
   middleware_name   = "coraza-waf"
-  engine_mode       = "DetectionOnly"
+  engine_mode       = "On"
+
+  depends_on = [
+    module.traefik
+  ]
+}
+
+module "test_app" {
+  source = "./services/test-app"
+
+  hostname = "whoami.bramwesel.me"
 
   depends_on = [
     module.traefik

@@ -10,4 +10,5 @@ spec:
         - "SecRuleEngine {{ .Values.engineMode }}"
         - "SecDebugLog /dev/stdout"
         - "SecDebugLogLevel 3"
-        - 'SecRule REQUEST_URI "@streq /coraza-test" "id:10001,phase:1,log,deny,status:403,msg:Coraza-detection-test"'
+        - "Include @crs-setup.conf.example"
+        - "Include @owasp_crs/**.conf"

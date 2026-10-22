@@ -13,6 +13,10 @@ resource "helm_release" "coraza_config" {
     yamlencode({
       middlewareName = var.middleware_name
       engineMode     = var.engine_mode
+
+      crsTest = {
+        enabled = false
+      }
     })
   ]
 }
