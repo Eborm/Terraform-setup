@@ -1,0 +1,14 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: {{ .Values.middlewareName | quote }}
+  namespace: {{ .Release.Namespace }}
+spec:
+  plugin:
+    coraza:
+      directives:
+        - "SecRuleEngine {{ .Values.engineMode }}"
+        - "SecDebugLog /dev/stdout"
+        - "SecDebugLogLevel 3"
+        - "Include @crs-setup.conf.example"
+        - "Include @owasp_crs/**.conf"

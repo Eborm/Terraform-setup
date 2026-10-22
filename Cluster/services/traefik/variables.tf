@@ -41,3 +41,20 @@ variable "truenas_ca_bundle" {
     error_message = "truenas_ca_bundle must contain the CA certificate used to validate the TrueNAS HTTPS certificate."
   }
 }
+
+variable "crowdsec_bouncer_key" {
+  description = "Shared key for the CrowdSec Traefik bouncer."
+  type        = string
+  sensitive   = true
+}
+
+variable "coraza_engine_mode" {
+  description = "Coraza rule engine mode for the global Traefik middleware"
+  type        = string
+  default     = "DetectionOnly"
+
+  validation {
+    condition     = contains(["DetectionOnly", "On"], var.coraza_engine_mode)
+    error_message = "coraza_engine_mode must be DetectionOnly or On."
+  }
+}
