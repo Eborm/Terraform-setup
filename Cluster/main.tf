@@ -92,6 +92,8 @@ module "traefik" {
   truenas_hostname  = "truenas.bramwesel.me"
   truenas_ca_bundle = var.truenas_ca_bundle
 
+  coraza_engine_mode = "On"
+
   depends_on = [
     module.metallb,
     module.cert_manager,
@@ -121,18 +123,6 @@ module "crowdsec" {
 
   depends_on = [
     module.truenas_csi
-  ]
-}
-
-module "coraza" {
-  source = "./security/coraza"
-
-  traefik_namespace = "traefik"
-  middleware_name   = "coraza-waf"
-  engine_mode       = "On"
-
-  depends_on = [
-    module.traefik
   ]
 }
 

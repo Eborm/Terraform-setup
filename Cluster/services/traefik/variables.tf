@@ -47,3 +47,14 @@ variable "crowdsec_bouncer_key" {
   type        = string
   sensitive   = true
 }
+
+variable "coraza_engine_mode" {
+  description = "Coraza rule engine mode for the global Traefik middleware"
+  type        = string
+  default     = "DetectionOnly"
+
+  validation {
+    condition     = contains(["DetectionOnly", "On"], var.coraza_engine_mode)
+    error_message = "coraza_engine_mode must be DetectionOnly or On."
+  }
+}

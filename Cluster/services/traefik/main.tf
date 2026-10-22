@@ -223,7 +223,7 @@ resource "helm_release" "traefik" {
             middlewares = [
               "traefik_cloudflare-only@kubernetescrd",
               "traefik_crowdsec-bouncer@kubernetescrd",
-              "traefik_coraza-waf@kubernetescrd"
+              "traefik_coraza-waf-global@kubernetescrd"
             ]
 
             tls = {
@@ -361,6 +361,30 @@ resource "helm_release" "traefik" {
             ]
 
             tls = {}
+          }
+        },
+
+        {
+          apiVersion = "traefik.io/v1alpha1"
+          kind       = "Middleware"
+
+          metadata = {
+            name      = "coraza-waf-global"
+            namespace = "{{ .Release.Namespace }}"
+          }
+
+          spec = {
+            plugin = {
+              coraza = {
+                directives = [
+                  "SecRuleEngine ${var.coraza_engine_mode}",
+                  "SecDebugLog /dev/stdout",
+                  "SecDebugLogLevel 3",
+                  "Include @crs-setup.conf.example",
+                  "Include @owasp_crs/**.conf"
+                ]
+              }
+            }
           }
         }
       ]
