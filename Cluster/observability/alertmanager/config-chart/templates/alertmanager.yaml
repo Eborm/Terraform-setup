@@ -1,0 +1,14 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Alertmanager
+metadata:
+  name: {{ .Values.alertmanager.name | quote }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: alertmanager
+spec:
+  replicas: {{ .Values.alertmanager.replicas }}
+  retention: {{ .Values.alertmanager.retention | quote }}
+  configSecret: {{ .Values.alertmanager.configSecret | quote }}
+
+  resources:
+{{ toYaml .Values.alertmanager.resources | indent 4 }}

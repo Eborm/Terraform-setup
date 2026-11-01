@@ -1,0 +1,64 @@
+prometheusRule:
+  name: cluster-alerts
+
+  labels:
+    release: prometheus-operator
+
+  groups:
+    - name: cluster-availability
+      rules:
+        - alert: PrometheusTargetDown
+          expr: up == 0
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: A Prometheus target is down
+            description: A scrape target has been unreachable for at least five minutes.
+
+        - alert: KubernetesNodeNotReady
+          expr: kube_node_status_condition{condition="Ready",status="true"} == 0
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: A Kubernetes node is not ready
+            description: A node has reported a non-ready condition for at least five minutes.
+
+        - alert: KubernetesPodCrashLooping
+          expr: max_over_time(kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff"}[5m]) >= 1
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: A pod container is crash-looping
+            description: A container has repeatedly entered CrashLoopBackOff.
+
+        - alert: KubernetesDeploymentReplicasMismatch
+          expr: kube_deployment_spec_replicas != kube_deployment_status_replicas_available
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: Deployment replicas are unavailable
+            description: A Deployment has not had all its desired replicas available for at least fifteen minutes.
+
+    - name: node-health
+      rules:
+        - alert: NodeHighCPU
+          expr: 100 * (1 - avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m]))) > 90
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: Node CPU usage is high
+            description: A node has sustained CPU utilization above 90 percent for fifteen minutes.
+
+        - alert: NodeHighMemory
+          expr: 100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes) > 90
+          for: 15m
+          labels:
+            severity: warning
+          annotations:
+            summary: Node memory usage is high
+            description: A node has used more than 90 percent of its available memory for fifteen minutes.

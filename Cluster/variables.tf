@@ -61,3 +61,14 @@ variable "crowdsec_bouncer_key" {
   type        = string
   sensitive   = true
 }
+
+variable "grafana_admin_password" {
+  description = "Grafana administrator password"
+  type        = string
+  sensitive   = true
+
+  validation {
+    condition     = length(var.grafana_admin_password) >= 32
+    error_message = "Grafana admin password must be at least 32 characters."
+  }
+}

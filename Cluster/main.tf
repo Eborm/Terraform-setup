@@ -23,6 +23,28 @@ locals {
   )
 }
 
+resource "kubernetes_namespace_v1" "monitoring" {
+  metadata {
+    name = "monitoring"
+  }
+}
+
+resource "kubernetes_namespace_v1" "node_exporter" {
+  metadata {
+    name = "node-exporter"
+
+    labels = {
+      "pod-security.kubernetes.io/enforce" = "privileged"
+    }
+  }
+}
+
+resource "kubernetes_namespace_v1" "kube_state_metrics" {
+  metadata {
+    name = "kube-state-metrics"
+  }
+}
+
 provider "kubernetes" {
   host = local.kubeconfig.clusters[0].cluster.server
 
@@ -133,5 +155,98 @@ module "test_app" {
 
   depends_on = [
     module.traefik
+  ]
+}
+
+module "prometheus_operator" {
+  source = "./observability/prometheus-operator"
+
+  namespace = kubernetes_namespace_v1.monitoring.metadata[0].name
+
+  chart_version = "92.11.0"
+}
+
+module "node_exporter" {
+  source = "./observability/node-exporter"
+
+  namespace     = kubernetes_namespace_v1.node_exporter.metadata[0].name
+  chart_version = "4.59.0"
+
+  depends_on = [
+    module.prometheus_operator
+  ]
+}
+
+module "kube_state_metrics" {
+  source = "./observability/kube-state-metrics"
+
+  namespace     = kubernetes_namespace_v1.kube_state_metrics.metadata[0].name
+  chart_version = "8.6.0"
+
+  depends_on = [
+    module.prometheus_operator
+  ]
+}
+
+module "prometheus" {
+  source = "./observability/prometheus"
+
+  namespace      = kubernetes_namespace_v1.monitoring.metadata[0].name
+  retention      = "7d"
+  retention_size = "8GB"
+
+  depends_on = [
+    module.prometheus_operator,
+    module.node_exporter,
+    module.kube_state_metrics,
+    module.alertmanager
+  ]
+}
+
+module "alertmanager" {
+  source = "./observability/alertmanager"
+
+  namespace = kubernetes_namespace_v1.monitoring.metadata[0].name
+
+  replicas  = 1
+  retention = "120h"
+
+  depends_on = [
+    module.prometheus_operator
+  ]
+}
+
+module "prometheus_rules" {
+  source = "./observability/prometheus-rules"
+
+  namespace = kubernetes_namespace_v1.monitoring.metadata[0].name
+
+  depends_on = [
+    module.prometheus_operator,
+    module.prometheus,
+    module.alertmanager
+  ]
+}
+
+module "grafana" {
+  source = "./observability/grafana"
+
+  namespace      = kubernetes_namespace_v1.monitoring.metadata[0].name
+  hostname       = "grafana.bramwesel.me"
+  chart_version  = "13.2.8"
+  admin_password = var.grafana_admin_password
+
+  depends_on = [
+    module.prometheus
+  ]
+}
+
+module "grafana_dashboards" {
+  source = "./observability/grafana-dashboards"
+
+  namespace = kubernetes_namespace_v1.monitoring.metadata[0].name
+
+  depends_on = [
+    module.grafana
   ]
 }
