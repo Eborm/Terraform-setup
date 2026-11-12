@@ -72,9 +72,21 @@ resource "helm_release" "cilium" {
         enabled = false
       }
 
-      # We'll enable Hubble after the base dataplane is confirmed healthy.
       hubble = {
-        enabled = false
+        enabled = true
+
+        relay = {
+          enabled = true
+        }
+
+        ui = {
+          enabled = true
+
+          # Keep the UI internal to the cluster.
+          service = {
+            type = "ClusterIP"
+          }
+        }
       }
     })
   ]
