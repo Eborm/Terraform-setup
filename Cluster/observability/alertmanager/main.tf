@@ -6,6 +6,16 @@ locals {
       group_wait      = "30s"
       group_interval  = "5m"
       repeat_interval = "12h"
+
+      routes = [
+        {
+          receiver = "ntfy"
+          matchers = [
+            "alertname =\"KubernetesContainerRestartingFrequently\""
+          ]
+          group_by = ["alertname", "namespace", "pod"]
+        }
+      ]
     }
 
     receivers = [
