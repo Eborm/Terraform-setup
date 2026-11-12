@@ -145,7 +145,7 @@ TrueNAS CSI provisioner
      |
      v
 TrueNAS NFS server
-192.168.68.148
+192.168.68.55
      |
      v
 ZFS pool: Storage

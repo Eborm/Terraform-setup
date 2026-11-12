@@ -70,7 +70,7 @@ resource "helm_release" "grafana" {
       persistence = {
         enabled       = true
         type          = "pvc"
-        existingClaim = "grafana-data"
+        existingClaim = kubernetes_persistent_volume_claim_v1.grafana_data.metadata[0].name
       }
 
       initChownData = {
@@ -108,6 +108,7 @@ resource "helm_release" "grafana" {
               type      = "prometheus"
               access    = "proxy"
               url       = "http://prometheus.monitoring.svc.cluster.local:9090"
+              uid = "PBFA97CFB590B2093"
               isDefault = true
               editable  = false
             }

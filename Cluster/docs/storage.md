@@ -12,10 +12,10 @@ the TrueNAS ZFS pool.
 
 | Setting | Value |
 |---|---|
-| TrueNAS address | 192.168.68.148 |
+| TrueNAS address | 192.168.68.55 |
 | ZFS pool | Storage |
 | Dataset path | k8s/nfs |
-| NFS server | 192.168.68.148 |
+| NFS server | 192.168.68.55 |
 | NFS version | 4.1 |
 | Compression | LZ4 |
 | Sync | STANDARD |
@@ -24,7 +24,7 @@ the TrueNAS ZFS pool.
 
 The TrueNAS API is accessed over:
 
-`wss://192.168.68.148/api/current`
+`wss://192.168.68.55/api/current`
 
 Terraform uses a dedicated TrueNAS API key stored in a
 Kubernetes Secret in the `truenas-csi` namespace.
