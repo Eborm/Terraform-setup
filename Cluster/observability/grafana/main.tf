@@ -111,7 +111,16 @@ resource "helm_release" "grafana" {
               uid       = "PBFA97CFB590B2093"
               isDefault = true
               editable  = false
-            }
+            },
+              {
+                name      = "Loki"
+                type      = "loki"
+                access    = "proxy"
+                url       = "http://loki.monitoring.svc.cluster.local:3100"
+                uid       = "loki"
+                isDefault = false
+                editable  = false
+              }
           ]
         }
       }

@@ -242,7 +242,8 @@ module "grafana" {
   admin_password = var.grafana_admin_password
 
   depends_on = [
-    module.prometheus
+    module.prometheus,
+    module.loki
   ]
 }
 
@@ -268,5 +269,28 @@ module "ntfy" {
   depends_on = [
     module.traefik,
     module.truenas_csi
+  ]
+}
+
+module "loki" {
+  source = "./observability/loki"
+
+  namespace          = kubernetes_namespace_v1.monitoring.metadata[0].name
+  storage_class_name = "truenas-nfs-loki"
+  storage_size       = "10Gi"
+  retention_period   = "168h"
+
+  depends_on = [
+    module.truenas_csi
+  ]
+}
+
+module "alloy" {
+  source = "./observability/alloy"
+
+  namespace = kubernetes_namespace_v1.monitoring.metadata[0].name
+
+  depends_on = [
+    module.loki
   ]
 }

@@ -99,6 +99,36 @@ resource "helm_release" "truenas_csi" {
 
             "nfs.rootSquash" = "true"
           }
+        },
+        {
+          name = "truenas-nfs-loki"
+
+          isDefault = false
+
+          reclaimPolicy = "Retain"
+
+          allowVolumeExpansion = true
+
+          volumeBindingMode = "Immediate"
+
+          mountOptions = [
+            "nfsvers=4.1"
+          ]
+
+          parameters = {
+            protocol = "nfs"
+
+            pool = var.truenas_pool
+
+            datasetPath = "k8s/nfs"
+
+            compression = "LZ4"
+
+            sync = "STANDARD"
+
+            "nfs.rootSquash" = "false"
+            "nfs.networks"   = "192.168.68.0/24"
+          }
         }
       ]
     })
