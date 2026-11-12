@@ -327,6 +327,42 @@
             "showLegend": false
             }
         }
+    },
+    {
+        "id": 7,
+        "title": "Top 10 Noisiest Containers",
+        "type": "barchart",
+        "datasource": {
+            "type": "loki",
+            "uid": "loki"
+        },
+        "gridPos": {
+            "h": 8,
+            "w": 24,
+            "x": 0,
+            "y": 46
+        },
+        "targets": [
+            {
+            "refId": "A",
+            "expr": "topk(10, sum by (namespace, pod, container) (count_over_time({job=~\".+\", namespace=~\"$namespace\", pod=~\"$pod\", container=~\"$container\", node=~\"$node\"}[$__range])))",
+            "queryType": "instant",
+            "legendFormat": "{{namespace}} / {{pod}} / {{container}}"
+            }
+        ],
+        "fieldConfig": {
+            "defaults": {
+            "unit": "short"
+            },
+            "overrides": []
+        },
+        "options": {
+            "orientation": "horizontal",
+            "showValue": "always",
+            "legend": {
+            "showLegend": false
+            }
+        }
     }
   ]
 }
