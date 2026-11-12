@@ -23,13 +23,20 @@ resource "helm_release" "kube_state_metrics" {
 
       prometheus = {
         monitor = {
-          enabled       = true
-          interval      = "30s"
-          scrapeTimeout = "10s"
+          enabled = true
 
-          # Must match the selector we'll configure on the Prometheus CR.
+          # Must match the selector configured on the Prometheus CR.
           additionalLabels = {
             release = "prometheus-operator"
+          }
+
+          http = {
+            interval      = "30s"
+            scrapeTimeout = "10s"
+
+            # Preserve Kubernetes resource labels instead of
+            # renaming conflicting labels to exported_namespace.
+            honorLabels = true
           }
         }
       }

@@ -31,7 +31,7 @@ variable "truenas_api_key" {
 variable "truenas_insecure_skip_tls" {
   description = "Disable TrueNAS API TLS certificate verification. Use only for explicitly trusted self-signed certificates."
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "truenas_postrender_runtime" {
@@ -71,4 +71,22 @@ variable "grafana_admin_password" {
     condition     = length(var.grafana_admin_password) >= 32
     error_message = "Grafana admin password must be at least 32 characters."
   }
+}
+
+variable "ntfy_client_password_hash" {
+  description = "Bcrypt password hash for the ntfy client account"
+  type        = string
+  sensitive   = true
+}
+
+variable "ntfy_alertmanager_password_hash" {
+  description = "Bcrypt password hash for the Alertmanager account"
+  type        = string
+  sensitive   = true
+}
+
+variable "ntfy_alertmanager_token" {
+  description = "Access token used by Alertmanager to publish notifications"
+  type        = string
+  sensitive   = true
 }

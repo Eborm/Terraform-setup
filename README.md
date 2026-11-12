@@ -1,93 +1,176 @@
-# Terraform setup for Proxmox and Talos
+# Terraform Homelab Infrastructure
 
-This repository contains two separate Terraform roots for building a Talos Kubernetes cluster on Proxmox and installing Cilium and MetalLB:
+Terraform configuration for a Proxmox-hosted Talos Linux Kubernetes
+homelab.
 
-- `Infrastructure/` provisions the Proxmox VMs and Talos cluster. It writes the generated Kubernetes kubeconfig to `Infrastructure/kubeconfig`.
-- `Cluster/` reads a kubeconfig and installs Cilium and MetalLB with Helm. MetalLB advertises the configured ingress address on the local Layer 2 network.
+Repository: https://github.com/Eborm/Terraform-setup
 
-The roots have separate Terraform state and must be run from their own directories. Terraform does not create an automatic dependency between them.
+Working branch: Kube-Prometheus-Stack
 
-## Prerequisites
+## Overview
 
-- Terraform installed and available on `PATH`
-- Bash and `awk` installed and available on `PATH` when running Terraform in WSL/Linux (the default TrueNAS CSI post-renderer runtime)
-- `kubectl` installed and available on `PATH` for cert-manager webhook readiness checks
-- Access to the Proxmox endpoint configured in `Infrastructure/main.tf`
-- Proxmox credentials supplied through an ignored `Infrastructure/secrets.auto.tfvars` file or `TF_VAR_proxmox_username` and `TF_VAR_proxmox_password`
-- A Talos-compatible Proxmox environment and the required provider access
+The repository contains two independent Terraform roots:
 
-Do not commit passwords, kubeconfigs, Terraform state, or other generated credentials. These files are ignored by Git. Review the provider versions in each root before changing them.
+| Directory | Responsibility |
+|---|---|
+| Infrastructure/ | Proxmox virtual machines and Talos Kubernetes bootstrap |
+| Cluster/ | Kubernetes networking, security, storage, monitoring and applications |
 
-## First-time bootstrap
-
-Run the roots in this order:
+The deployment order is:
 
 ```text
-Infrastructure -> Cluster
+Proxmox
+   |
+   v
+Talos Linux
+   |
+   v
+Kubernetes
+   |
+   +-- Cilium
+   +-- MetalLB
+   +-- cert-manager
+   +-- Traefik
+   +-- CrowdSec
+   +-- Coraza WAF
+   +-- TrueNAS CSI
+   +-- Prometheus
+   +-- Alertmanager
+   +-- Grafana
+   +-- ntfy
 ```
 
-From the repository root:
+## Documentation
 
-```powershell
-Set-Location Infrastructure
+### Infrastructure
+
+- [Infrastructure overview](Infrastructure/README.md)
+- [Proxmox setup and permissions](Infrastructure/Terraform.md)
+- [Talos configuration](Infrastructure/talos-config/Talos.md)
+- [Proxmox module notes](Infrastructure/Proxmox-update.md)
+
+### Kubernetes Cluster
+
+- [Cluster overview](Cluster/README.md)
+- [Architecture](Cluster/docs/architecture.md)
+- [Component inventory](Cluster/docs/inventory.md)
+- [Networking](Cluster/docs/networking.md)
+- [Security](Cluster/docs/security.md)
+- [Storage](Cluster/docs/storage.md)
+- [Observability](Cluster/docs/observability.md)
+- [Services](Cluster/docs/services.md)
+- [Operations](Cluster/docs/operations.md)
+- [Backup and recovery](Cluster/docs/backup-and-recovery.md)
+- [Troubleshooting](Cluster/docs/troubleshooting.md)
+
+## Requirements
+
+- Terraform
+- Proxmox VE access
+- Talos Linux-compatible virtual machines
+- kubectl
+- Helm provider access through Terraform
+- TrueNAS SCALE with API access
+- Cloudflare API token with the required DNS permissions
+- Access to the cluster network
+
+For WSL/Linux, Bash is used by default for the TrueNAS CSI Helm
+post-renderer.
+
+Native Windows users need PowerShell 7 and must configure
+`truenas_postrender_runtime = "pwsh"`.
+
+## Secrets and credentials
+
+Each Terraform root uses its own variables.
+
+Typical ignored secret files:
+
+```text
+Infrastructure/secrets.auto.tfvars
+Cluster/secrets.auto.tfvars
+```
+
+Sensitive values include:
+
+- Proxmox credentials
+- Cloudflare API token
+- TrueNAS API key
+- TrueNAS CA certificate
+- CrowdSec bouncer key
+- Grafana administrator password
+- ntfy password hashes and access token
+
+Never commit:
+
+- secrets.auto.tfvars
+- kubeconfig
+- Terraform state
+- private keys
+- API tokens
+- generated credentials
+
+Check `.gitignore` before adding files to Git.
+
+## First deployment
+
+The two Terraform roots have separate state.
+
+Always apply Infrastructure before Cluster.
+
+```bash
+cd Infrastructure
+
 terraform init
+terraform fmt -recursive
 terraform validate
 terraform plan
 terraform apply
 
-Set-Location ..\Cluster
+cd ../Cluster
+
 terraform init
-terraform validate
-terraform plan
-terraform apply
-```
-
-The `Infrastructure` apply must finish first. Its `local_sensitive_file.kubeconfig` resource creates `Infrastructure/kubeconfig`; that file is the input used by the `Cluster` root. A fresh checkout does not contain the file, and planning `Cluster` before the first `Infrastructure` apply fails during kubeconfig loading. The `Cluster` variable validation reports this as a missing-file error instead of allowing a less clear provider error.
-
-## Supplying another kubeconfig
-
-The default input is `../Infrastructure/kubeconfig`, resolved while running Terraform from the `Cluster` directory. To use a different existing kubeconfig, pass its path explicitly:
-
-```powershell
-Set-Location Cluster
-terraform plan -var='kubeconfig_path=C:\path\to\kubeconfig'
-terraform apply -var='kubeconfig_path=C:\path\to\kubeconfig'
-```
-
-The supplied file must be a YAML kubeconfig containing cluster, user, certificate, and client-key data. Keep it outside Git and protect its permissions because it contains cluster credentials.
-
-The TrueNAS CSI module verifies the TrueNAS API certificate by default. For a deliberately trusted self-signed certificate, set `truenas_insecure_skip_tls=true`; this disables certificate verification and should not be used on an untrusted network. The pinned TrueNAS CSI chart does not support configuring a private CA bundle.
-
-When running Terraform natively on Windows, install PowerShell 7 and run with `-var='truenas_postrender_runtime=pwsh'` instead of the default Bash runtime.
-
-## Repository layout
-
-```text
-Infrastructure/
-	main.tf                 Proxmox and Talos root
-	talos-config/           Talos cluster configuration
-	proxmox/                VM definitions
-	kubeconfig              Generated, ignored kubeconfig
-
-Cluster/
-	main.tf                 Kubernetes and Helm providers
-	networking/cilium/      Cilium Helm release
-	networking/metallb/     MetalLB Helm release and configuration
-```
-
-The MetalLB configuration creates a Layer 2 `IPAddressPool` for the `ingress_ip` value. The pool uses `autoAssign: false`, so workloads must explicitly request it through a matching MetalLB service annotation or `LoadBalancerClass` configuration.
-
-For detailed Proxmox permissions and Talos notes, see [Infrastructure/Terraform.md](Infrastructure/Terraform.md) and [Infrastructure/talos-config/Talos.md](Infrastructure/talos-config/Talos.md).
-
-## Common commands
-
-Run Terraform commands from the root being changed. Check the plan before applying it, especially when changing VM definitions or Cilium settings.
-
-```powershell
 terraform fmt -recursive
 terraform validate
 terraform plan
 terraform apply
 ```
 
-To destroy the environment, destroy `Cluster` first and `Infrastructure` second so the Kubernetes provider is not left pointing at removed infrastructure.
+The Infrastructure root generates:
+
+`Infrastructure/kubeconfig`
+
+The Cluster root uses that file by default.
+
+## Terraform workflow
+
+For infrastructure changes:
+
+1. Inspect the existing configuration.
+2. Make one logical change.
+3. Run terraform fmt.
+4. Run terraform validate.
+5. Review terraform plan.
+6. Apply only after reviewing the plan.
+7. Verify the deployed resources.
+8. Update documentation.
+9. Commit the change.
+
+Never assume a successful Terraform apply proves that the application
+is healthy. Check the Kubernetes resources and application behavior.
+
+## Destruction order
+
+When intentionally destroying the complete environment:
+
+1. Destroy the Cluster root.
+2. Destroy the Infrastructure root.
+
+This prevents Kubernetes and Helm providers from attempting to access
+a cluster that has already been removed.
+
+Persistent volumes use Retain policies in the TrueNAS StorageClass.
+Deleting Kubernetes resources does not necessarily delete their
+underlying TrueNAS data.
+
+Review storage resources before any destructive operation.

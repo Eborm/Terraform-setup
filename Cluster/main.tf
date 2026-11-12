@@ -110,7 +110,7 @@ module "traefik" {
 
   crowdsec_bouncer_key = var.crowdsec_bouncer_key
 
-  truenas_host      = "192.168.68.148"
+  truenas_host      = "192.168.68.55"
   truenas_hostname  = "truenas.bramwesel.me"
   truenas_ca_bundle = var.truenas_ca_bundle
 
@@ -126,7 +126,7 @@ module "traefik" {
 module "truenas_csi" {
   source = "./storage/truenas-csi"
 
-  truenas_host           = "192.168.68.148"
+  truenas_host           = "192.168.68.55"
   truenas_pool           = "Storage"
   truenas_api_key        = var.truenas_api_key
   insecure_skip_tls      = var.truenas_insecure_skip_tls
@@ -211,8 +211,13 @@ module "alertmanager" {
   replicas  = 1
   retention = "120h"
 
+  ntfy_url = "https://ntfy.bramwesel.me/alerts?template=alertmanager"
+
+  ntfy_alertmanager_token = var.ntfy_alertmanager_token
+
   depends_on = [
-    module.prometheus_operator
+    module.prometheus_operator,
+    module.ntfy
   ]
 }
 
@@ -248,5 +253,20 @@ module "grafana_dashboards" {
 
   depends_on = [
     module.grafana
+  ]
+}
+
+module "ntfy" {
+  source = "./services/ntfy"
+
+  hostname = "ntfy.bramwesel.me"
+
+  ntfy_client_password_hash       = var.ntfy_client_password_hash
+  ntfy_alertmanager_password_hash = var.ntfy_alertmanager_password_hash
+  ntfy_alertmanager_token         = var.ntfy_alertmanager_token
+
+  depends_on = [
+    module.traefik,
+    module.truenas_csi
   ]
 }

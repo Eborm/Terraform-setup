@@ -1,3 +1,35 @@
+locals {
+  alertmanager_config = yamlencode({
+    route = {
+      receiver        = "ntfy"
+      group_by        = ["alertname", "namespace"]
+      group_wait      = "30s"
+      group_interval  = "5m"
+      repeat_interval = "12h"
+    }
+
+    receivers = [
+      {
+        name = "ntfy"
+
+        webhook_configs = [
+          {
+            url           = var.ntfy_url
+            send_resolved = true
+
+            http_config = {
+              authorization = {
+                type        = "Bearer"
+                credentials = var.ntfy_alertmanager_token
+              }
+            }
+          }
+        ]
+      }
+    ]
+  })
+}
+
 resource "kubernetes_secret_v1" "alertmanager_config" {
   metadata {
     name      = "alertmanager-main"
@@ -10,26 +42,15 @@ resource "kubernetes_secret_v1" "alertmanager_config" {
 
   type = "Opaque"
 
-  # Minimal valid configuration for the initial installation.
-  # The empty receiver deliberately discards notifications until
-  # a real notification receiver is configured.
-  data = {
-    "alertmanager.yaml" = yamlencode({
-      route = {
-        receiver        = "discard"
-        group_by        = ["alertname", "namespace"]
-        group_wait      = "30s"
-        group_interval  = "5m"
-        repeat_interval = "12h"
-      }
-
-      receivers = [
-        {
-          name = "discard"
-        }
-      ]
-    })
+  data_wo = {
+    "alertmanager.yaml" = local.alertmanager_config
   }
+
+  # Update the write-only Secret whenever the configuration changes.
+  data_wo_revision = parseint(
+    substr(sha256(local.alertmanager_config), 0, 8),
+    16
+  )
 }
 
 resource "helm_release" "alertmanager" {

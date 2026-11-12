@@ -14,3 +14,14 @@ variable "retention" {
   type        = string
   default     = "120h"
 }
+
+variable "ntfy_url" {
+  description = "ntfy webhook URL for Alertmanager notifications"
+  type        = string
+}
+
+variable "ntfy_alertmanager_token" {
+  description = "Access token used by Alertmanager to authenticate with ntfy"
+  type        = string
+  sensitive   = true
+}
