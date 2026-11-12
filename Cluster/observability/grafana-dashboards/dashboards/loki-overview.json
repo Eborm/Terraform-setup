@@ -1,4 +1,3 @@
-
 {
   "id": null,
   "uid": "loki-overview",
@@ -13,6 +12,114 @@
     "to": "now"
   },
   "editable": false,
+  "templating": {
+    "list": [
+      {
+        "name": "namespace",
+        "label": "Namespace",
+        "type": "query",
+        "datasource": {
+          "type": "loki",
+          "uid": "loki"
+        },
+        "query": {
+          "label": "namespace",
+          "stream": "{job=~\".+\"}",
+          "type": 1
+        },
+        "definition": "label_values({job=~\".+\"}, namespace)",
+        "refresh": 1,
+        "sort": 1,
+        "multi": false,
+        "includeAll": true,
+        "allValue": ".*",
+        "options": [],
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        }
+      },
+      {
+        "name": "pod",
+        "label": "Pod",
+        "type": "query",
+        "datasource": {
+          "type": "loki",
+          "uid": "loki"
+        },
+        "query": {
+          "label": "pod",
+          "stream": "{namespace=~\"$namespace\"}",
+          "type": 1
+        },
+        "definition": "label_values({namespace=~\"$namespace\"}, pod)",
+        "refresh": 1,
+        "sort": 1,
+        "multi": false,
+        "includeAll": true,
+        "allValue": ".*",
+        "options": [],
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        }
+      },
+      {
+        "name": "container",
+        "label": "Container",
+        "type": "query",
+        "datasource": {
+          "type": "loki",
+          "uid": "loki"
+        },
+        "query": {
+          "label": "container",
+          "stream": "{namespace=~\"$namespace\", pod=~\"$pod\"}",
+          "type": 1
+        },
+        "definition": "label_values({namespace=~\"$namespace\", pod=~\"$pod\"}, container)",
+        "refresh": 1,
+        "sort": 1,
+        "multi": false,
+        "includeAll": true,
+        "allValue": ".*",
+        "options": [],
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        }
+      },
+      {
+        "name": "node",
+        "label": "Node",
+        "type": "query",
+        "datasource": {
+          "type": "loki",
+          "uid": "loki"
+        },
+        "query": {
+          "label": "node",
+          "stream": "{job=~\".+\"}",
+          "type": 1
+        },
+        "definition": "label_values({job=~\".+\"}, node)",
+        "refresh": 1,
+        "sort": 1,
+        "multi": false,
+        "includeAll": true,
+        "allValue": ".*",
+        "options": [],
+        "current": {
+          "selected": true,
+          "text": "All",
+          "value": "$__all"
+        }
+      }
+    ]
+  },
   "panels": [
     {
       "id": 1,
@@ -31,7 +138,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum(count_over_time({job=~\".+\"}[$__interval]))",
+          "expr": "sum(count_over_time({job=~\".+\", namespace=~\"$namespace\", pod=~\"$pod\", container=~\"$container\", node=~\"$node\"}[$__interval]))",
           "queryType": "range"
         }
       ],
@@ -68,7 +175,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (service_name) (count_over_time({job=~\".+\"}[$__interval]))",
+          "expr": "sum by (service_name) (count_over_time({job=~\".+\", namespace=~\"$namespace\", pod=~\"$pod\", container=~\"$container\", node=~\"$node\"}[$__interval]))",
           "queryType": "range"
         }
       ],
@@ -105,7 +212,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "sum by (job) (count_over_time({job=~\".+\"}[$__interval]))",
+          "expr": "sum by (job) (count_over_time({job=~\".+\", namespace=~\"$namespace\", pod=~\"$pod\", container=~\"$container\", node=~\"$node\"}[$__interval]))",
           "queryType": "range"
         }
       ],
@@ -142,7 +249,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "{job=~\".+\"} |~ \"(?i)(error|fatal|panic)\"",
+          "expr": "{job=~\".+\", namespace=~\"$namespace\", pod=~\"$pod\", container=~\"$container\", node=~\"$node\"} |~ \"(?i)(error|fatal|panic)\"",
           "queryType": "range"
         }
       ],
@@ -172,7 +279,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "{job=~\".+\"}",
+          "expr": "{job=~\".+\", namespace=~\"$namespace\", pod=~\"$pod\", container=~\"$container\", node=~\"$node\"}",
           "queryType": "range"
         }
       ],
