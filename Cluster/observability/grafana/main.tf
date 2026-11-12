@@ -62,6 +62,19 @@ resource "helm_release" "grafana" {
 
       replicas = 1
 
+      # Restart Grafana when the alert provisioning configuration changes.
+      podAnnotations = {
+        "checksum/alerting-config" = sha256(local.grafana_alerting_provisioning)
+      }
+
+      extraConfigmapMounts = [
+        {
+          name      = "grafana-alerting"
+          mountPath = "/etc/grafana/provisioning/alerting"
+          configMap = kubernetes_config_map_v1.grafana_alerting.metadata[0].name
+          readOnly  = true
+        }
+      ]
 
       deploymentStrategy = {
         type = "Recreate"
@@ -112,15 +125,15 @@ resource "helm_release" "grafana" {
               isDefault = true
               editable  = false
             },
-              {
-                name      = "Loki"
-                type      = "loki"
-                access    = "proxy"
-                url       = "http://loki.monitoring.svc.cluster.local:3100"
-                uid       = "loki"
-                isDefault = false
-                editable  = false
-              }
+            {
+              name      = "Loki"
+              type      = "loki"
+              access    = "proxy"
+              url       = "http://loki.monitoring.svc.cluster.local:3100"
+              uid       = "loki"
+              isDefault = false
+              editable  = false
+            }
           ]
         }
       }
