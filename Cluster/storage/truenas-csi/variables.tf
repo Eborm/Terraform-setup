@@ -1,7 +1,7 @@
 variable "truenas_host" {
   description = "TrueNAS IP address or hostname."
   type        = string
-  default     = "192.168.68.148"
+  default     = "192.168.68.55"
 }
 
 variable "truenas_pool" {
@@ -51,3 +51,4 @@ variable "chart_version" {
   type        = string
   default     = "1.4.0"
 }
+

@@ -1,0 +1,18 @@
+prometheus:
+  name: prometheus
+  serviceAccountName: prometheus
+  replicas: 1
+
+  retention: 7d
+  retentionSize: 8GB
+  scrapeInterval: 30s
+  evaluationInterval: 30s
+
+  resources:
+    requests:
+      cpu: 250m
+      memory: 1Gi
+    limits:
+      memory: 2Gi
+
+  alertmanagerServiceName: alertmanager-main
