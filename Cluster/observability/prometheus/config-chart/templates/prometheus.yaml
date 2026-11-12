@@ -1,0 +1,43 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  name: {{ .Values.prometheus.name | quote }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: prometheus
+spec:
+  replicas: {{ .Values.prometheus.replicas }}
+  serviceAccountName: {{ .Values.prometheus.serviceAccountName | quote }}
+
+  retention: {{ .Values.prometheus.retention | quote }}
+  retentionSize: {{ .Values.prometheus.retentionSize | quote }}
+  scrapeInterval: {{ .Values.prometheus.scrapeInterval | quote }}
+  evaluationInterval: {{ .Values.prometheus.evaluationInterval | quote }}
+
+  alerting:
+    alertmanagers:
+      - namespace: {{ .Release.Namespace }}
+        name: {{ .Values.prometheus.alertmanagerServiceName | quote }}
+        port: web
+
+  enableAdminAPI: false
+
+  # All exporters use the common release label.
+  serviceMonitorSelector:
+    matchLabels:
+      release: prometheus-operator
+  serviceMonitorNamespaceSelector: {}
+
+  podMonitorSelector:
+    matchLabels:
+      release: prometheus-operator
+  podMonitorNamespaceSelector: {}
+
+  # Our separate prometheus-rules module will use this label.
+  ruleSelector:
+    matchLabels:
+      release: prometheus-operator
+  ruleNamespaceSelector: {}
+
+  resources:
+{{ toYaml .Values.prometheus.resources | indent 4 }}
