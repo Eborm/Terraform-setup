@@ -291,6 +291,42 @@
         "enableLogDetails": true,
         "dedupStrategy": "none"
       }
+    },
+    {
+        "id": 6,
+        "title": "Top 10 Pods by Log Volume",
+        "type": "barchart",
+        "datasource": {
+            "type": "loki",
+            "uid": "loki"
+        },
+        "gridPos": {
+            "h": 8,
+            "w": 24,
+            "x": 0,
+            "y": 38
+        },
+        "targets": [
+            {
+            "refId": "A",
+            "expr": "topk(10, sum by (namespace, pod) (count_over_time({job=~\".+\", namespace=~\"$namespace\", pod=~\"$pod\", container=~\"$container\", node=~\"$node\"}[$__range])))",
+            "queryType": "instant",
+            "legendFormat": "{{namespace}} / {{pod}}"
+            }
+        ],
+        "fieldConfig": {
+            "defaults": {
+            "unit": "short"
+            },
+            "overrides": []
+        },
+        "options": {
+            "orientation": "horizontal",
+            "showValue": "always",
+            "legend": {
+            "showLegend": false
+            }
+        }
     }
   ]
 }
